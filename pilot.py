@@ -161,7 +161,7 @@ class EmbeddingTester(object):
                     if len(line) > 0 and line[0] == 'S':
                         tokens = line.split('\t')
                         for simpler_token in postag_simpler(tokens[2]):
-                            sentiment_vocab[tokens[7]] = simpler_token
+                            sentiment_vocab[tokens[7]].append(simpler_token)
 
         return sentiment_vocab
 
@@ -203,9 +203,11 @@ class EmbeddingTester(object):
         """
         self.w2v_model.wv.vocab
 
-
     def similarity_test(self):
-        # Test - 유사도 분석
+        """
+        Test for similarity
+        :return:
+        """
         word1 = '남자/N'
         word2 = '여자/N'
         neu1 = '피의자/N'
@@ -252,7 +254,6 @@ class EmbeddingTester(object):
         print(neu1, self.fasttext_model.most_similar(neu1))
         print(neu2, self.fasttext_model.most_similar(neu2))
 
-
     def definition_test(self):
         # Test - 성 임베딩 차원 규명 47 pair
         word_group1 = ['남자/N', '남/N', '남성/N', '아들/N', '형/N', '오빠/N', '아빠/N', '아버지/N', '소년/N',
@@ -276,10 +277,12 @@ class EmbeddingTester(object):
 
         for word in self.sentiment_vocab['positive'] + self.sentiment_vocab['negative']:
             if word in self.w2v_model.wv.vocab:
-                print(word)
                 sentiment_invocab_list.append(word)
 
-        print('sentiment vocab in w2v_model is {0} in total {1}'.format(len(sentiment_invocab_list), len(self.sentiment_vocab['positive'] + self.sentiment_vocab['negative'])))
+        print('sentiment vocab in w2v_model is {0} tokens, {1} sets in total {2}'
+              .format(len(sentiment_invocab_list),
+                      len(set(sentiment_invocab_list)),
+                      len(self.sentiment_vocab['positive'] + self.sentiment_vocab['negative'])))
 
 
         gender_diff_vec_list = []
