@@ -143,6 +143,7 @@ class EmbeddingTester(object):
         with codecs.open('../dataset/sentiment dataset/Emotional_Word_Dictionary_RES_v1.2.txt'.format(MODEL_NAME), "r",
                          encoding='utf-8', errors='ignore') as read_file:
             sentiment_vocab = OrderedDict()
+            sentiment_vocab['positive'], sentiment_vocab['negative'] = [], []
             if debug_mode:
                 pos_list = []
                 sentiment_list = []
@@ -152,7 +153,7 @@ class EmbeddingTester(object):
                         pos_list.append(tokens[2].split('/')[-1])
                         sentiment_list.append(tokens[7])
                         for simpler_token in postag_simpler(tokens[2]):
-                            sentiment_vocab[tokens[7]] = simpler_token
+                            sentiment_vocab[tokens[7]].append(simpler_token)
 
                 print("Check pos_list and sentiment_list", set(pos_list), set(sentiment_list))
             else:
@@ -267,13 +268,21 @@ class EmbeddingTester(object):
                        '그녀/N', '맏딸/N', '큰딸/N', '막내딸/N', '친언니/N', '친어머니/N', '외동딸/N',
                        '여탕/N', '품절녀/N', '선녀/N', '미소녀/N', '새엄마/N', '예비신부/N', '여장부/N', '차녀/N']
         gender_diff_vec_list = []
+        sentiment_invocab_list = []
 
         for word1, word2 in zip(word_group1, word_group2):
             print(word1, word2, self.w2v_model.most_similar([word1], negative=[word2]))
             gender_diff_vec_list.append(self.w2v_model[word1] - self.w2v_model[word2])
 
+        for word in self.sentiment_vocab['positive'] + self.sentiment_vocab['negative']:
+            if word in self.w2v_model.wv.vocab:
+                print(word)
+                sentiment_invocab_list.append(word)
+
+        print('sentiment vocab in w2v_model is {0} in total {1}'.format(len(sentiment_invocab_list), len(self.sentiment_vocab['positive'] + self.sentiment_vocab['negative'])))
+
+
         gender_diff_vec_list = []
-        self.gender_vocab[0]
 
 
 if __name__ == '__main__':
