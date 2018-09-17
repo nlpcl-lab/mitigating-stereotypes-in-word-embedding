@@ -102,22 +102,23 @@ class EmbeddingTester(object):
     def get_selected_gender_vocab(self):
         """
         Return gender vocab(need the collected and 'selected' gender vocab in the directory)
-        :return: gender vocab (dict - 0: woman, 1: man)
+        :return: gender vocab (dict - 0: list of words(woman), 1: list of words(man))
         """
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_vocab_manuallyselected.txt'.format(MODEL_NAME), "r", encoding='utf-8',
                          errors='ignore') as read_file:
             gender_vocab = OrderedDict()
+            gender_vocab['0'], gender_vocab['1'] = [], []
             for line in read_file.read().splitlines():
                 if len(line) > 1:
                     tokens = line.split('\t')
-                    gender_vocab[tokens[2]] = tokens[0]
+                    gender_vocab[tokens[2]].append(tokens[0])
 
         return gender_vocab
 
     def get_sentiment_vocab(self, debug_mode=False):
         """
         :param debug_mode: print log or not
-        :return: sentiment_vocab (dict keys - positive, negative)
+        :return: sentiment_vocab (dict keys - positive, negative, each of them contains list of words(sentiment))
         """
         def postag_simpler(token):
             """
@@ -196,12 +197,35 @@ class EmbeddingTester(object):
         print('Success to load Fasttext Model... in {0:.2f} seconds'.format(time.time() - start_time))
         return fasttext_model
 
-    def find_most_dist(self):
+    def make_test_analogy(self):
         """
-        need: gender_vocab, sentiment_vocab
         :return: only print
         """
         self.w2v_model.wv.vocab
+
+    def _cal_cosine_inout(self):
+        pass
+
+    def _cal_default(self):
+        """
+        Default method is cosine similarity with in-in vectors.
+        :return:
+        """
+        pass
+
+    def cal_sentiment_bias(self, similarity_method='cosine_inout'):
+        """
+
+        :return:
+        """
+        self.case_name = "_cal_" + similarity_method
+        man_words, woman_words = self.gender_vocab['0'], self.gender_vocab['1']
+        pos_words, neg_words = self.sentiment_vocab['positive'], self.sentiment_vocab['negative']
+        pos_score = 0
+        neg_score = 0
+        for word in man_words:
+            pos_score += getattr(self, self.case_name, lambda: "default")
+        self.sentiment_vocab
 
     def similarity_test(self):
         """
