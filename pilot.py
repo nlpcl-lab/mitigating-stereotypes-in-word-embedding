@@ -331,14 +331,14 @@ class EmbeddingTester(object):
         ### not use ### np.dot(self.w2v_model.wv.word_vec(word1, use_norm=True), self.outv.wv.word_vec(word2, use_norm=True))
         :return:
         """
-        print(word1, word2)
-        print(np.dot(self.w2v_model[word1], self.outv[word2]) /\
-               (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2])))
-
         return np.dot(self.w2v_model[word1], self.outv[word2]) / \
                (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2]))
 
-    def _cal_default(self, word1, word2):
+    def _cal_cosine_sigmoid_inout(self, word1, word2):
+        return sigmoid(np.dot(self.w2v_model[word1], self.outv[word2]) / \
+               (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2])))
+
+    def _cal_cosine_inin(self, word1, word2):
         """
         Default method is cosine similarity with in-in vectors.
         same codes.
@@ -351,26 +351,59 @@ class EmbeddingTester(object):
         return self.w2v_model.similarity(word1, word2)
 
     def _cal_relative_dist(self, word1, word2):
-        return self.w2v_model[word1] - self.w2v_model[word2]
+        return np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2])
 
-
+    def _softmax_score(self, *args):
+        return args[0] / sum(args)
 
     def cal_sentiment_bias(self, similarity_method='cosine_inout'):
         """
-
+        similarity_method: bias measures
         :return:
         """
         self.case_name = "_cal_" + similarity_method
-        man_words, woman_words = self.gender_vocab['0'], self.gender_vocab['1']
+        man_words, woman_words = self.gender_vocab['1'], self.gender_vocab['0']
         pos_words, neg_words = self.sentiment_vocab['positive'], self.sentiment_vocab['negative']
-        pos_score = 0
-        neg_score = 0
+        total_pos_score, pos_score = 0, 0
+        total_neg_score, neg_score = 0, 0
+        man_score, woman_score = 0, 0
         for word1 in man_words:
             for word2 in pos_words:
-                pos_score += getattr(self, self.case_name, lambda: "default")(word1, word2)
-                print(pos_score)
+                pos_score += getattr(self, self.case_name, lambda: "cosine_inin")(word1, word2)
+            pos_score = pos_score / len(pos_words)
+            total_pos_score += pos_score
+            #print(word1, pos_score)
 
-        return 1
+            for word2 in neg_words:
+                neg_score += getattr(self, self.case_name, lambda: "cosine_inin")(word1, word2)
+            neg_score = neg_score / len(neg_words)
+            total_neg_score += neg_score
+            #print(word1, neg_score)
+
+        total_pos_score = total_pos_score / len(man_words)
+        total_neg_score = total_neg_score / len(man_words)
+        man_score = self._softmax_score()
+        print('positive' if total_pos_score > total_neg_score else "negative", total_pos_score, total_neg_score)
+
+        for word1 in woman_words:
+            for word2 in pos_words:
+                pos_score += getattr(self, self.case_name, lambda: "cosine_inin")(word1, word2)
+            pos_score = pos_score / len(pos_words)
+            total_pos_score += pos_score
+            #print(word1, pos_score)
+
+            for word2 in neg_words:
+                neg_score += getattr(self, self.case_name, lambda: "cosine_inin")(word1, word2)
+            neg_score = neg_score / len(neg_words)
+            total_neg_score += neg_score
+            #print(word1, neg_score)
+
+        total_pos_score = total_pos_score / len(woman_words)
+        total_neg_score = total_neg_score / len(woman_words)
+        print('positive' if total_pos_score > total_neg_score else "negative", total_pos_score, total_neg_score)
+
+        print("[{0}] sentiment bias is calculated.".format(similarity_method))
+        return 0
 
     def similarity_test(self):
         """
@@ -439,8 +472,10 @@ class EmbeddingTester(object):
                 print(word)
         """
 
-        self.cal_sentiment_bias()
-
+        self.cal_sentiment_bias(similarity_method='cosine_inout')
+        self.cal_sentiment_bias(similarity_method='cosine_inin')
+        self.cal_sentiment_bias(similarity_method='cosine_sigmoid_inout')
+        self.cal_sentiment_bias(similarity_method='relative_dist')
 
 if __name__ == '__main__':
     # First, is_selected_gender_vocab=False
