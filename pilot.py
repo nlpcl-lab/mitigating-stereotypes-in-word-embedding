@@ -203,15 +203,17 @@ class EmbeddingTester(object):
         """
         self.w2v_model.wv.vocab
 
-    def _cal_cosine_inout(self):
+    def _cal_cosine_inout(self, word1, word2):
+        print('cosine inout', word1, word2)
         pass
 
-    def _cal_default(self):
+    def _cal_default(self, word1, word2):
         """
         Default method is cosine similarity with in-in vectors.
         :return:
         """
-        pass
+        print(word1, word2)
+
 
     def cal_sentiment_bias(self, similarity_method='cosine_inout'):
         """
@@ -223,9 +225,11 @@ class EmbeddingTester(object):
         pos_words, neg_words = self.sentiment_vocab['positive'], self.sentiment_vocab['negative']
         pos_score = 0
         neg_score = 0
-        for word in man_words:
-            pos_score += getattr(self, self.case_name, lambda: "default")
-        self.sentiment_vocab
+        for word1 in man_words:
+            for word2 in pos_words:
+                pos_score += getattr(self, self.case_name, word1, word2, lambda: "default")
+                print(pos_score)
+
 
     def similarity_test(self):
         """
