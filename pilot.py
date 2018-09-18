@@ -72,6 +72,7 @@ class EmbeddingTester(object):
         else:
             self.collect_gender_vocab(self.w2v_model)
         self.sentiment_vocab = self.get_sentiment_vocab(debug_mode=False, remove_oov=remove_oov)
+        self.gender_pair_list = self.get_gender_pair_list(remove_oov=remove_oov)
 
     def _remove_oov(self, input_list):
         """
@@ -80,11 +81,21 @@ class EmbeddingTester(object):
         """
         tmp_list = []
         for word in input_list:
-            try:
-                if isinstance(self.w2v_model[word], np.ndarray):
-                    tmp_list.append(word)
-            except Exception as e:
-                continue
+            if isinstance(word, tuple):
+                tmp_tuple = ()
+                for token in word:
+                    try:
+                        if isinstance(self.w2v_model[token], np.ndarray):
+                            tmp_tuple += (token,)
+                    except Exception as e:
+                        continue
+                tmp_list.append(tmp_tuple)
+            else:
+                try:
+                    if isinstance(self.w2v_model[word], np.ndarray):
+                        tmp_list.append(word)
+                except Exception as e:
+                    continue
 
         return tmp_list
 
@@ -227,7 +238,7 @@ class EmbeddingTester(object):
             sentiment_vocab['positive'], sentiment_vocab['negative'] = \
                 self._remove_duplicated_words(sentiment_vocab['positive'], sentiment_vocab['negative'])
 
-            # remove words not in w2v.model vocab.
+            # 3. Remove words not in w2v.model vocab.
             if remove_oov:
                 sentiment_vocab['positive'] = self._remove_oov(sentiment_vocab['positive'])
                 sentiment_vocab['negative'] = self._remove_oov(sentiment_vocab['negative'])
@@ -237,6 +248,32 @@ class EmbeddingTester(object):
                   .format(vocab_count, vocab_without_count))
 
         return sentiment_vocab
+
+    def get_gender_pair_list(self, remove_oov=True):
+        """
+        Return gender pair vocab
+        :param remove_oov: remove words not in w2v.model vocab.
+        :return: gender pair list
+        """
+        with codecs.open(COLLECTED_DATASET_DIR + 'gender_pair.txt'.format(MODEL_NAME), "r", encoding='utf-8',
+                         errors='ignore') as read_file:
+            # 1. Get gender pairs.
+            gender_pair_list = []
+            for line in read_file.read().splitlines():
+                if len(line) > 1:
+                    tokens = line.split('\t')
+                    gender_pair_list.append((tokens[0], tokens[1]))
+            vocab_count = len(gender_pair_list)
+
+            # 2. Remove words not in w2v.model vocab.
+            if remove_oov:
+                gender_pair_list = self._remove_oov(gender_pair_list)
+
+            vocab_without_count = len(gender_pair_list)
+            print("The number of gender_pairs / without oov and duplications: {0} / {1}"
+                  .format(vocab_count, vocab_without_count))
+
+        return gender_pair_list
 
     def load_fasttext_model(self, fname):
         """
@@ -369,22 +406,10 @@ class EmbeddingTester(object):
 
     def definition_test(self):
         # Test - 성 임베딩 차원 규명 47 pair
-        word_group1 = ['남자/N', '남/N', '남성/N', '아들/N', '형/N', '오빠/N', '아빠/N', '아버지/N', '소년/N',
-                       '남자친구/N', '게이/N', '남자배우/N', '남동생/N', '왕자/N', '남학생/N', '미남/N', '장남/N',
-                       '손자/N', '남신/N', '남친/N', '시아버지/N', '여심/N', '남자싱글/N', '꽃미남/N', '남창/N',
-                       '친오빠/N', '남중/N', '큰아들/N', '남성혐오/N', '남성호르몬/N', '득남/N', '아비/N',
-                       '그남자/N', '맏아들/N', '큰아들/N', '막내아들/N', '친형/N', '친아버지/N', '외동아들/N',
-                       '남탕/N', '품절남/N', '선남/N', '미소년/N', '새아버지/N', '예비아빠/N', '대장부/N', '차남/N']
-        word_group2 = ['여자/N', '여/N', '여성/N', '딸/N', '언니/N', '누나/N', '엄마/N', '어머니/N', '소녀/N',
-                       '여자친구/N', '레즈/N', '여배우/N', '여동생/N', '공주/N', '여학생/N', '미녀/N', '장녀/N',
-                       '손녀/N', '여신/N', '여친/N', '시어머니/N', '남심/N', '여자싱글/N', '꽃미녀/N', '여창/N',
-                       '친언니/N', '여중/N', '큰딸/N', '여성혐오/N', '여성호르몬/N', '득녀/N', '어미/N',
-                       '그녀/N', '맏딸/N', '큰딸/N', '막내딸/N', '친언니/N', '친어머니/N', '외동딸/N',
-                       '여탕/N', '품절녀/N', '선녀/N', '미소녀/N', '새엄마/N', '예비신부/N', '여장부/N', '차녀/N']
         gender_diff_vec_list = []
         sentiment_invocab_list = []
 
-        for word1, word2 in zip(word_group1, word_group2):
+        for (word1, word2) in self.gender_pair_list:
             print(word1, word2, self.w2v_model.most_similar([word1], negative=[word2]))
             gender_diff_vec_list.append(self.w2v_model[word1] - self.w2v_model[word2])
 
@@ -393,11 +418,6 @@ class EmbeddingTester(object):
                 sentiment_invocab_list.append(word)
             else:
                 print(word)
-
-        print('sentiment vocab in w2v_model is {0} tokens, {1} sets in total {2}'
-              .format(len(sentiment_invocab_list),
-                      len(set(sentiment_invocab_list)),
-                      len(self.sentiment_vocab['positive'] + self.sentiment_vocab['negative'])))
 
         self.cal_sentiment_bias()
 
