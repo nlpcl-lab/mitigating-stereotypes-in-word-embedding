@@ -71,6 +71,21 @@ class EmbeddingTester(object):
             self.collect_gender_vocab(self.w2v_model)
         self.sentiment_vocab = self.get_sentiment_vocab(debug_mode=False, remove_oov=remove_oov)
 
+    def _remove_oov(self, input_list):
+        """
+        :param input_list: list of words
+        :return:
+        """
+        tmp_list = []
+        for word in input_list:
+            try:
+                if isinstance(self.w2v_model[word], np.ndarray):
+                    tmp_list.append(word)
+            except Exception as e:
+                continue
+
+        return tmp_list
+
     def load_w2v_model(self, fname):
         try:
             print('Loading W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
@@ -126,13 +141,18 @@ class EmbeddingTester(object):
                     tokens = line.split('\t')
                     gender_vocab[tokens[2]].append(tokens[0])
 
+            vocab_count = len(gender_vocab['0']) + len(gender_vocab['1'])
             gender_vocab['0'] = list(set(gender_vocab['0']))
             gender_vocab['1'] = list(set(gender_vocab['1']))
 
             # remove words not in w2v.model vocab.
             if remove_oov:
-                gender_vocab['0'] = [word for word in gender_vocab['0'] if word not in self.w2v_model.wv.index2word]
-                gender_vocab['1'] = [word for word in gender_vocab['1'] if word not in self.w2v_model.wv.index2word]
+                gender_vocab['0'] = self._remove_oov(gender_vocab['0'])
+                gender_vocab['1'] = self._remove_oov(gender_vocab['1'])
+
+            vocab_without_count = len(gender_vocab['0']) + len(gender_vocab['1'])
+            print("The number of gender_vocab words / without oov and duplications: {0} / {1}"
+                  .format(vocab_count, vocab_without_count))
 
         return gender_vocab
 
@@ -185,15 +205,18 @@ class EmbeddingTester(object):
                         for simpler_token in postag_simpler(tokens[2]):
                             sentiment_vocab[tokens[7]].append(simpler_token)
 
+            vocab_count = len(sentiment_vocab['positive']) + len(sentiment_vocab['negative'])
             sentiment_vocab['positive'] = list(set(sentiment_vocab['positive']))
             sentiment_vocab['negative'] = list(set(sentiment_vocab['negative']))
 
             # remove words not in w2v.model vocab.
             if remove_oov:
-                sentiment_vocab['positive'] = [word for word in sentiment_vocab['positive']
-                                               if word not in self.w2v_model.wv.index2word]
-                sentiment_vocab['negative'] = [word for word in sentiment_vocab['negative']
-                                               if word not in self.w2v_model.wv.index2word]
+                sentiment_vocab['positive'] = self._remove_oov(sentiment_vocab['positive'])
+                sentiment_vocab['negative'] = self._remove_oov(sentiment_vocab['negative'])
+
+            vocab_without_count = len(sentiment_vocab['positive']) + len(sentiment_vocab['negative'])
+            print("The number of sentiment_vocab words / without oov and duplications: {0} / {1}"
+                  .format(vocab_count, vocab_without_count))
 
         return sentiment_vocab
 
@@ -350,6 +373,8 @@ class EmbeddingTester(object):
         for word in self.sentiment_vocab['positive'] + self.sentiment_vocab['negative']:
             if word in self.w2v_model.wv.vocab:
                 sentiment_invocab_list.append(word)
+            else:
+                print(word)
 
         print('sentiment vocab in w2v_model is {0} tokens, {1} sets in total {2}'
               .format(len(sentiment_invocab_list),
