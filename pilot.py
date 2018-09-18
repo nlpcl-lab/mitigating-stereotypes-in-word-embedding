@@ -3,6 +3,8 @@
 
 import json, codecs, time, re
 import config
+import gensim
+import numpy as np
 from gensim import utils, matutils
 from gensim.models import word2vec, FastText
 from collections import OrderedDict
@@ -47,16 +49,27 @@ def read_community_posting_and_Sav_File():
 
 
 class EmbeddingTester(object):
-    def __init__(self, is_selected_gender_vocab=False):
+    def __init__(self, is_selected_gender_vocab=False, remove_oov=True):
+        """
+        :param is_selected_gender_vocab: 'True' means selected_gender_vocab is prepared.
+        :param remove_oov: remove words not in w2v.model vocab.
+        """
         self.w2v_fname = config.MODEL_DIR + 'w2v_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.fasttext_fname = config.MODEL_DIR + 'fasttext_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.w2v_model = self.load_w2v_model(self.w2v_fname)
-        self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
+        # self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
+
+        # For in-out computation
+        self.outv = gensim.models.KeyedVectors(vector_size=300)
+        self.outv.vocab = self.w2v_model.wv.vocab
+        self.outv.index2word = self.w2v_model.wv.index2word
+        self.outv.syn0 = self.w2v_model.syn1neg
+
         if is_selected_gender_vocab:
-            self.gender_vocab = self.get_selected_gender_vocab()
+            self.gender_vocab = self.get_selected_gender_vocab(remove_oov=remove_oov)
         else:
             self.collect_gender_vocab(self.w2v_model)
-        self.sentiment_vocab = self.get_sentiment_vocab(debug_mode=False)
+        self.sentiment_vocab = self.get_sentiment_vocab(debug_mode=False, remove_oov=remove_oov)
 
     def load_w2v_model(self, fname):
         try:
@@ -99,7 +112,7 @@ class EmbeddingTester(object):
             # print(sorted(gender_vocab.items(), key=lambda item: -item[1].count)[:10])
             print("Success to save gender vocabulary.")
 
-    def get_selected_gender_vocab(self):
+    def get_selected_gender_vocab(self, remove_oov=True):
         """
         Return gender vocab(need the collected and 'selected' gender vocab in the directory)
         :return: gender vocab (dict - 0: list of words(woman), 1: list of words(man))
@@ -113,9 +126,17 @@ class EmbeddingTester(object):
                     tokens = line.split('\t')
                     gender_vocab[tokens[2]].append(tokens[0])
 
+            gender_vocab['0'] = list(set(gender_vocab['0']))
+            gender_vocab['1'] = list(set(gender_vocab['1']))
+
+            # remove words not in w2v.model vocab.
+            if remove_oov:
+                gender_vocab['0'] = [word for word in gender_vocab['0'] if word not in self.w2v_model.wv.index2word]
+                gender_vocab['1'] = [word for word in gender_vocab['1'] if word not in self.w2v_model.wv.index2word]
+
         return gender_vocab
 
-    def get_sentiment_vocab(self, debug_mode=False):
+    def get_sentiment_vocab(self, debug_mode=False, remove_oov=True):
         """
         :param debug_mode: print log or not
         :return: sentiment_vocab (dict keys - positive, negative, each of them contains list of words(sentiment))
@@ -164,6 +185,16 @@ class EmbeddingTester(object):
                         for simpler_token in postag_simpler(tokens[2]):
                             sentiment_vocab[tokens[7]].append(simpler_token)
 
+            sentiment_vocab['positive'] = list(set(sentiment_vocab['positive']))
+            sentiment_vocab['negative'] = list(set(sentiment_vocab['negative']))
+
+            # remove words not in w2v.model vocab.
+            if remove_oov:
+                sentiment_vocab['positive'] = [word for word in sentiment_vocab['positive']
+                                               if word not in self.w2v_model.wv.index2word]
+                sentiment_vocab['negative'] = [word for word in sentiment_vocab['negative']
+                                               if word not in self.w2v_model.wv.index2word]
+
         return sentiment_vocab
 
     def load_fasttext_model(self, fname):
@@ -204,7 +235,18 @@ class EmbeddingTester(object):
         self.w2v_model.wv.vocab
 
     def _cal_cosine_inout(self, word1, word2):
+        """
+        The method is cosine similarity with in-out vectors.
+        :return:
+        """
         print('cosine inout', word1, word2)
+        print(self.w2v_model[word1].shape, np.linalg.norm(self.w2v_model[word1]))
+        print(self.w2v_model.wv.word_vec(word1, use_norm=True).shape, np.linalg.norm(self.w2v_model.wv.word_vec(word1, use_norm=True)))
+        print(self.outv.most_similar(positive=[word1], topn=False), self.outv.most_similar(positive=[word1], topn=False).shape)
+        print(self.outv[word2].shape, np.linalg.norm(self.outv[word2]))
+        print(self.outv.wv.word_vec(word2, use_norm=True).shape, np.linalg.norm(self.outv.wv.word_vec(word2, use_norm=True)))
+        print(np.dot(self.w2v_model.wv.word_vec(word1, use_norm=True), self.outv.wv.word_vec(word2, use_norm=True)))
+        print(np.dot(self.w2v_model[word1], self.outv[word2]) / (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2])))
         pass
 
     def _cal_default(self, word1, word2):
@@ -213,6 +255,8 @@ class EmbeddingTester(object):
         :return:
         """
         print(word1, word2)
+        return self.w2v_model[word1] - self.w2v_model[word2]
+
 
 
     def cal_sentiment_bias(self, similarity_method='cosine_inout'):
@@ -227,7 +271,7 @@ class EmbeddingTester(object):
         neg_score = 0
         for word1 in man_words:
             for word2 in pos_words:
-                pos_score += getattr(self, self.case_name, word1, word2, lambda: "default")
+                pos_score += getattr(self, self.case_name, lambda: "default")(word1, word2)
                 print(pos_score)
 
 
@@ -312,8 +356,7 @@ class EmbeddingTester(object):
                       len(set(sentiment_invocab_list)),
                       len(self.sentiment_vocab['positive'] + self.sentiment_vocab['negative'])))
 
-
-        gender_diff_vec_list = []
+        self.cal_sentiment_bias()
 
 
 if __name__ == '__main__':
@@ -322,7 +365,7 @@ if __name__ == '__main__':
     # Second,
     # after manually selecting gender_vocab with changing file name 'gender_vocab_manuallyselected.txt'
     # do is_selected_gender_vocab=True
-    et = EmbeddingTester(is_selected_gender_vocab=True)
+    et = EmbeddingTester(is_selected_gender_vocab=True, remove_oov=True)
     et.definition_test()
     # et.similarity_test()
 
