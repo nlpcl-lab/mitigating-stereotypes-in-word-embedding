@@ -382,8 +382,9 @@ class EmbeddingTester(object):
 
         total_pos_score = total_pos_score / len(man_words)
         total_neg_score = total_neg_score / len(man_words)
-        man_score = self._softmax_score()
-        print('positive' if total_pos_score > total_neg_score else "negative", total_pos_score, total_neg_score)
+        print('positive' if total_pos_score > total_neg_score else 'negative', total_pos_score, total_neg_score)
+        man_score = self._softmax_score(total_pos_score, total_neg_score)
+        print(man_score)
 
         for word1 in woman_words:
             for word2 in pos_words:
@@ -400,8 +401,11 @@ class EmbeddingTester(object):
 
         total_pos_score = total_pos_score / len(woman_words)
         total_neg_score = total_neg_score / len(woman_words)
-        print('positive' if total_pos_score > total_neg_score else "negative", total_pos_score, total_neg_score)
+        print('positive' if total_pos_score > total_neg_score else 'negative', total_pos_score, total_neg_score)
+        woman_score = self._softmax_score(total_pos_score, total_neg_score)
+        print(woman_score)
 
+        print('man positive' if man_score > pos_score else 'woman positive')
         print("[{0}] sentiment bias is calculated.".format(similarity_method))
         return 0
 
