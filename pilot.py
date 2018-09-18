@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Emotional_Word_Dictionary_RES_v1.2: 정규표현식 ^[a-zA-Z0-9]+\t[a-zA-Z0-9_]+\t[가-힣]+/[a-zA-Z]+\t 를 통해 오류줄 색인 가능.
+# gender / sentiment / gender_pair words are filtered if it is oov, duplicated word, or words in both groups.
+# e.g. '화나/A' in both a positive vocab and a negative vocab.
 
 import json, codecs, time, re
 import config
@@ -74,7 +76,7 @@ class EmbeddingTester(object):
     def _remove_oov(self, input_list):
         """
         :param input_list: list of words
-        :return:
+        :return: oov removed list
         """
         tmp_list = []
         for word in input_list:
@@ -85,6 +87,19 @@ class EmbeddingTester(object):
                 continue
 
         return tmp_list
+
+    def _remove_duplicated_words(self, group1, group2):
+        """
+        :param group1: list of words in group1
+        :param group2: list of words in group2
+        :return: two list duplicated words are removed
+        """
+        group1 = set(group1)
+        group2 = set(group2)
+        intersection_group = group1.intersection(group2)
+        group1 = list(group1 - intersection_group)
+        group2 = list(group2 - intersection_group)
+        return group1, group2
 
     def load_w2v_model(self, fname):
         try:
@@ -134,18 +149,19 @@ class EmbeddingTester(object):
         """
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_vocab_manuallyselected.txt'.format(MODEL_NAME), "r", encoding='utf-8',
                          errors='ignore') as read_file:
+            # 1. Get gender vocabs.
             gender_vocab = OrderedDict()
             gender_vocab['0'], gender_vocab['1'] = [], []
             for line in read_file.read().splitlines():
                 if len(line) > 1:
                     tokens = line.split('\t')
                     gender_vocab[tokens[2]].append(tokens[0])
-
             vocab_count = len(gender_vocab['0']) + len(gender_vocab['1'])
-            gender_vocab['0'] = list(set(gender_vocab['0']))
-            gender_vocab['1'] = list(set(gender_vocab['1']))
 
-            # remove words not in w2v.model vocab.
+            # 2. Remove duplicated words and words in both groups.
+            gender_vocab['0'], gender_vocab['1'] = self._remove_duplicated_words(gender_vocab['0'], gender_vocab['1'])
+
+            # 3. Remove words not in w2v.model vocab.
             if remove_oov:
                 gender_vocab['0'] = self._remove_oov(gender_vocab['0'])
                 gender_vocab['1'] = self._remove_oov(gender_vocab['1'])
@@ -184,6 +200,7 @@ class EmbeddingTester(object):
 
         with codecs.open('../dataset/sentiment dataset/Emotional_Word_Dictionary_RES_v1.2.txt'.format(MODEL_NAME), "r",
                          encoding='utf-8', errors='ignore') as read_file:
+            # 1. Get sentiment vocabs.
             sentiment_vocab = OrderedDict()
             sentiment_vocab['positive'], sentiment_vocab['negative'] = [], []
             if debug_mode:
@@ -204,10 +221,11 @@ class EmbeddingTester(object):
                         tokens = line.split('\t')
                         for simpler_token in postag_simpler(tokens[2]):
                             sentiment_vocab[tokens[7]].append(simpler_token)
-
             vocab_count = len(sentiment_vocab['positive']) + len(sentiment_vocab['negative'])
-            sentiment_vocab['positive'] = list(set(sentiment_vocab['positive']))
-            sentiment_vocab['negative'] = list(set(sentiment_vocab['negative']))
+
+            # 2. Remove duplicated words and words in both groups.
+            sentiment_vocab['positive'], sentiment_vocab['negative'] = \
+                self._remove_duplicated_words(sentiment_vocab['positive'], sentiment_vocab['negative'])
 
             # remove words not in w2v.model vocab.
             if remove_oov:
