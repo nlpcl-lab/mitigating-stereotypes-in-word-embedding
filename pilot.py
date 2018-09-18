@@ -6,6 +6,7 @@
 import json, codecs, time, re
 import config
 import gensim
+import math
 import numpy as np
 from gensim import utils, matutils
 from gensim.models import word2vec, FastText
@@ -48,6 +49,10 @@ def read_community_posting_and_Sav_File():
                  if i >= 100:
                      exit()
                  print(line)
+
+
+def sigmoid(x):
+    return 1 / (1 + math.exp(-x))
 
 
 class EmbeddingTester(object):
@@ -315,24 +320,37 @@ class EmbeddingTester(object):
     def _cal_cosine_inout(self, word1, word2):
         """
         The method is cosine similarity with in-out vectors.
+        Some of In-out similarity have negative. Generally, it has small number.
+        note.
+        self.w2v_model[word1]: shape 300 / unit vector
+        self.outv[word2]: shape 300 / not unit vector
+        cosine sim: np.dot(self.w2v_model[word1], self.outv[word2]) /
+            (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2])))
+        ### not use ### self.w2v_model.wv.word_vec(word1, use_norm=True): same
+        ### not use ### self.outv.wv.word_vec(word2, use_norm=True): shape 300 / unit vector
+        ### not use ### np.dot(self.w2v_model.wv.word_vec(word1, use_norm=True), self.outv.wv.word_vec(word2, use_norm=True))
         :return:
         """
-        print('cosine inout', word1, word2)
-        print(self.w2v_model[word1].shape, np.linalg.norm(self.w2v_model[word1]))
-        print(self.w2v_model.wv.word_vec(word1, use_norm=True).shape, np.linalg.norm(self.w2v_model.wv.word_vec(word1, use_norm=True)))
-        print(self.outv.most_similar(positive=[word1], topn=False), self.outv.most_similar(positive=[word1], topn=False).shape)
-        print(self.outv[word2].shape, np.linalg.norm(self.outv[word2]))
-        print(self.outv.wv.word_vec(word2, use_norm=True).shape, np.linalg.norm(self.outv.wv.word_vec(word2, use_norm=True)))
-        print(np.dot(self.w2v_model.wv.word_vec(word1, use_norm=True), self.outv.wv.word_vec(word2, use_norm=True)))
-        print(np.dot(self.w2v_model[word1], self.outv[word2]) / (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2])))
-        pass
+        print(word1, word2)
+        print(np.dot(self.w2v_model[word1], self.outv[word2]) /\
+               (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2])))
+
+        return np.dot(self.w2v_model[word1], self.outv[word2]) / \
+               (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.outv[word2]))
 
     def _cal_default(self, word1, word2):
         """
         Default method is cosine similarity with in-in vectors.
+        same codes.
+        self.w2v_model.similarity(word1, word2)
+        np.dot(matutils.unitvec(self.w2v_model[word1]), matutils.unitvec(self.w2v_model[word2]))
+        np.dot(self.w2v_model[word1], self.w2v_model[word2]) /\
+               (np.linalg.norm(self.w2v_model[word1]) * np.linalg.norm(self.w2v_model[word2]))
         :return:
         """
-        print(word1, word2)
+        return self.w2v_model.similarity(word1, word2)
+
+    def _cal_relative_dist(self, word1, word2):
         return self.w2v_model[word1] - self.w2v_model[word2]
 
 
@@ -352,6 +370,7 @@ class EmbeddingTester(object):
                 pos_score += getattr(self, self.case_name, lambda: "default")(word1, word2)
                 print(pos_score)
 
+        return 1
 
     def similarity_test(self):
         """
@@ -408,7 +427,7 @@ class EmbeddingTester(object):
         # Test - 성 임베딩 차원 규명 47 pair
         gender_diff_vec_list = []
         sentiment_invocab_list = []
-
+        """
         for (word1, word2) in self.gender_pair_list:
             print(word1, word2, self.w2v_model.most_similar([word1], negative=[word2]))
             gender_diff_vec_list.append(self.w2v_model[word1] - self.w2v_model[word2])
@@ -418,6 +437,7 @@ class EmbeddingTester(object):
                 sentiment_invocab_list.append(word)
             else:
                 print(word)
+        """
 
         self.cal_sentiment_bias()
 
