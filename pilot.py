@@ -351,13 +351,19 @@ class EmbeddingTester(object):
         return self.w2v_model.similarity(word1, word2)
 
     def _cal_relative_dist(self, word1, word2):
-        return np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2])
+        """
+        The smaller relative_dist is, the closer that sentiment of that gender has.
+        :param word1:
+        :param word2:
+        :return:
+        """
+        return -np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2])
 
     def _cal_setting1(self, man_words, pos_words, neg_words, similarity_method, gender='man'):
-        total_pos_score, pos_score = 0, 0
-        total_neg_score, neg_score = 0, 0
+        total_pos_score, total_neg_score = 0, 0
         self.case_name = "_cal_" + similarity_method
         for word1 in man_words:
+            pos_score, neg_score = 0, 0
             for word2 in pos_words:
                 pos_score += getattr(self, self.case_name, lambda: "cosine_inin")(word1, word2)
             pos_score = pos_score / len(pos_words)
@@ -367,12 +373,13 @@ class EmbeddingTester(object):
                 neg_score += getattr(self, self.case_name, lambda: "cosine_inin")(word1, word2)
             neg_score = neg_score / len(neg_words)
             total_neg_score += neg_score
+            # print('total_pos_neg_score', total_pos_score, total_neg_score)
 
         total_pos_score = total_pos_score / len(man_words)
         total_neg_score = total_neg_score / len(man_words)
         print('{0} words are {1} ({2:.3f} {3} {4:.3f}).'.format(gender,
               'positive' if total_pos_score > total_neg_score else 'negative', total_pos_score,
-               '>' if total_pos_score > total_neg_score else '<', total_neg_score))
+              '>' if total_pos_score > total_neg_score else '<', total_neg_score))
         result_score = self._softmax_score(total_pos_score, total_neg_score)
         print('the softmax score (e(pos)/e(pos)+e(neg)): {0:.3f}'.format(result_score))
         return result_score
@@ -385,9 +392,8 @@ class EmbeddingTester(object):
             woman_dist = getattr(self, self.case_name, lambda: "cosine_inin")(woman_word, pos_word)
             if debug_mode and j < 10:
                 print('Given {0}: {1} {2:.3f} {3} {4:.3f}'.format(pos_word, man_word, man_dist, woman_word, woman_dist))
-            man_score = man_score + (man_dist - woman_dist) \
-                if sentiment == 'positive' else man_score - (man_dist - woman_dist)
-        print(man_word, woman_word, '~ {0} word'.format(sentiment), man_score)
+            man_score = man_score + (man_dist - woman_dist)
+        # print(man_word, woman_word, '~ {0} word'.format(sentiment), man_score)
         return man_score
 
     def _softmax_score(self, *args):
@@ -401,39 +407,26 @@ class EmbeddingTester(object):
         if group == 1:
             man_words, woman_words = self.gender_vocab['1'], self.gender_vocab['0']
         elif group == 2:
-            pass
-            # man_words, woman_words = zip(*self.gender_pair_list)
+            man_words, woman_words = zip(*self.gender_pair_list)
 
         pos_words, neg_words = self.sentiment_vocab['positive'], self.sentiment_vocab['negative']
 
         if setting == 1:
             man_score = self._cal_setting1(man_words, pos_words, neg_words, similarity_method, gender='man')
             woman_score = self._cal_setting1(woman_words, pos_words, neg_words, similarity_method, gender='woman')
-            print('{0} ({1:.3f} {2} {3:.3f})'.format('man positive' if man_score > woman_score else 'woman positive',
+            print('{0} ({1:.6f} {2} {3:.6f})'.format('man positive' if man_score > woman_score else 'woman positive',
                                                      man_score, '>' if man_score > woman_score else '<', woman_score))
 
-        elif setting == 2:
-            """
-            self.case_name = "_cal_" + similarity_method
-            man_dist = getattr(self, self.case_name, lambda: "cosine_inin")('남자/N', '여자/N')
-            woman_dist = getattr(self, self.case_name, lambda: "cosine_inin")('여자/N', '간호사/N')
-            print('Given {0}: {1} {2:.3f} {3} {4:.3f}'.format('여자/N - 간호사/N', '남자/N', man_dist, '여자/N',
-                                                              woman_dist))
-            man_dist = getattr(self, self.case_name, lambda: "cosine_inin")('백인/N', '위험/N')
-            woman_dist = getattr(self, self.case_name, lambda: "cosine_inin")('흑인/N', '위험/N')
-            print('Given {0}: {1} {2:.3f} {3} {4:.3f}'.format('위험/N', '백인/N', man_dist, '흑인/N',
-                                                              woman_dist))
-            """
+        elif group == 2 and setting == 2:
             man_score, total_score = 0, 0
             for i, (man_word, woman_word) in enumerate(self.gender_pair_list):
                 man_score = self._cal_setting2(man_word, woman_word, pos_words, similarity_method, sentiment='positive')
-                man_score -= self._cal_setting2(man_word, woman_word, pos_words, similarity_method, sentiment='negative')
+                man_score -= self._cal_setting2(man_word, woman_word, neg_words, similarity_method, sentiment='negative')
                 total_score = total_score + (man_score / len(pos_words + neg_words))
             total_score = total_score / len(self.gender_pair_list)
-            print('total_score: {0:.3f}'.format(total_score))
+            print('{0} positive ({1:.6f})'.format('man' if total_score > 0 else 'woman', total_score))
 
         print("[{0}] sentiment bias is calculated.\n".format(similarity_method))
-        return 0
 
     def similarity_test(self):
         """
@@ -486,8 +479,13 @@ class EmbeddingTester(object):
         print(neu1, self.fasttext_model.most_similar(neu1))
         print(neu2, self.fasttext_model.most_similar(neu2))
 
-    def definition_test(self):
-        # Test - 성 임베딩 차원 규명 47 pair
+    def sent_bias_test(self):
+        self.cal_sentiment_bias(similarity_method='cosine_inout')
+        self.cal_sentiment_bias(similarity_method='cosine_inin')
+        self.cal_sentiment_bias(similarity_method='cosine_sigmoid_inout')
+        self.cal_sentiment_bias(similarity_method='relative_dist')
+
+    def testtest(self):
         gender_diff_vec_list = []
         sentiment_invocab_list = []
         """
@@ -502,11 +500,6 @@ class EmbeddingTester(object):
                 print(word)
         """
 
-        self.cal_sentiment_bias(similarity_method='cosine_inout')
-        self.cal_sentiment_bias(similarity_method='cosine_inin')
-        self.cal_sentiment_bias(similarity_method='cosine_sigmoid_inout')
-        self.cal_sentiment_bias(similarity_method='relative_dist')
-
 if __name__ == '__main__':
     # First, is_selected_gender_vocab=False
     # collect_gender_vocab(w2v_model)
@@ -514,6 +507,6 @@ if __name__ == '__main__':
     # after manually selecting gender_vocab with changing file name 'gender_vocab_manuallyselected.txt'
     # do is_selected_gender_vocab=True
     et = EmbeddingTester(is_selected_gender_vocab=True, remove_oov=True)
-    et.definition_test()
+    et.sent_bias_test()
     # et.similarity_test()
 
