@@ -3,7 +3,7 @@
 # gender / sentiment / gender_pair words are filtered if it is oov, duplicated word, or words in both groups.
 # e.g. '화나/A' in both a positive vocab and a negative vocab.
 
-import json, codecs, time, re
+import json, codecs, time, re, os
 import config
 import gensim
 import math
@@ -18,11 +18,11 @@ COLLECTED_FNAME = config.COLLECTED_FNAME_TWITTER
 COLLECTED_DATASET_DIR = 'source\\'
 MODEL_NAME = 'twitter_all'
 # MODEL_NAME = 'news2018'
+DELTA_THRESHOLD = 1
 
 start_time = time.time()
 
-
-def read_community_posting_and_Sav_File():
+def read_community_posting_and_sav_file():
     # fname -> json formatted file
     def read_file(fname):
         content = ''
@@ -49,7 +49,6 @@ def read_community_posting_and_Sav_File():
                  if i >= 100:
                      exit()
                  print(line)
-
 
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
@@ -78,6 +77,8 @@ class EmbeddingTester(object):
             self.collect_gender_vocab(self.w2v_model)
         self.sentiment_vocab = self.get_sentiment_vocab(debug_mode=False, remove_oov=remove_oov)
         self.gender_pair_list = self.get_gender_pair_list(remove_oov=remove_oov)
+        # self.gender_neutral_vocab = self.get_gender_neutral_vocab()
+        self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=3)
 
     def _remove_oov(self, input_list):
         """
@@ -315,7 +316,93 @@ class EmbeddingTester(object):
         """
         :return: only print
         """
+        def delta_threshold(word1, word2):
+            return True if np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2]) <= DELTA_THRESHOLD else False
+
+        def calculate_cosine_score(w2v_model, man_word, woman_word):
+            """
+            Given gender pair (a,b), generate (x,y) pair which satisfies within delta threshold in descending order.
+            :param w2v_model:
+            :param man_word:
+            :param woman_word:
+            :return:
+            """
+            a_minus_b = w2v_model[man_word] - w2v_model[woman_word]
+            dists = np.dot(w2v_model.wv.syn0norm, a_minus_b)
+            best = np.argsort(dists)[::-1]   # 이건 '단어(x)'를 점수 높은 순으로 배열. (x-y)를 생성해야함.
+
+        with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
+                         errors='ignore') as write_file:
+            analogy_pair_score_dict = {}
+
+            for (man_word, woman_word) in self.gender_pair_list:
+                analogy_pair_score_dict[(man_word, woman_word, word1, word2)]
+
         self.w2v_model.wv.vocab
+
+    def _gender_neutral_definition_1(self):
+        with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
+                         errors='ignore') as write_file:
+            gender_neutral_vocab = OrderedDict()
+            for word, vocab_obj in sorted(self.w2v_model.wv.vocab.items(), key=lambda item: -item[1].count):
+                match = re.search(r'(/A|/a|/V)$', word)
+                if match:
+                    gender_neutral_vocab[word] = vocab_obj
+                    write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
+
+            print(list(gender_neutral_vocab.items())[:10])
+            print("Success to save gender_neutral vocabulary.")
+
+        return gender_neutral_vocab
+
+    def _gender_neutral_definition_2(self):
+        with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}_2.txt'.format(MODEL_NAME), "w", encoding='utf-8',
+                         errors='ignore') as write_file:
+            gender_neutral_vocab = OrderedDict()
+            w2v_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
+                         if word not in self.gender_vocab['0'] + self.gender_vocab['1']}
+            for word, vocab_obj in sorted(w2v_vocab.items(), key=lambda item: -item[1].count):
+                gender_neutral_vocab[word] = vocab_obj
+                write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
+
+            print(list(gender_neutral_vocab.items())[:10])
+            print("Success to save gender_neutral_2 vocabulary.")
+
+        return gender_neutral_vocab
+
+    def _gender_neutral_definition_3(self):
+        with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}_3.txt'.format(MODEL_NAME), "w", encoding='utf-8',
+                         errors='ignore') as write_file:
+            gender_neutral_vocab = OrderedDict()
+            tmp_list = []
+            w2v_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
+                         if not (word in self.gender_vocab['0'] + self.gender_vocab['1'] or
+                         re.search(r'(/NP|/R|/n)$', word) or
+                         re.search(r'(남/N|녀/N|여/N|남자/N|여자/N|모/N|부/N|딸/N|아들/N|엄마/N|아빠/N|형/N|언니/N|'
+                                  r'오빠/N|누나/N|계집/N|공주/N|왕자/N|아버지/N|어머니/N|아내/N|어미/N|아비/N|아범/N|'
+                                  r'어멈/N|게이/N|레즈비언/N|년/N|놈/N)$', word) or
+                         re.search(r'^(남|녀|여|남자|여자|계집|공주|왕자|아버지|어머니|아내|어미|아비'
+                                           r'|아범|어멈|게이|레즈)', word))}
+            sorted_w2v_list = sorted(w2v_vocab.items(), key=lambda item: -item[1].count)
+            for i, (word, vocab_obj) in enumerate(sorted_w2v_list):
+                # key=lambda item: -(item[1].count * item[0]):
+                tmp_list.append((word, vocab_obj, i))
+
+            for word, vocab_obj, i in sorted(tmp_list, key=lambda item: -(item[1].count * item[2]))[:int(len(self.w2v_model.wv.index2word) * 5/100)]:
+                gender_neutral_vocab[word] = vocab_obj
+                write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
+
+            print(list(gender_neutral_vocab.items())[:10])
+            print("Success to save gender_neutral_3 vocabulary.")
+
+        return gender_neutral_vocab
+
+    def collect_gender_neutral_vocab(self, setting=1):
+        self.case_name = "_gender_neutral_definition_" + str(setting)
+        gender_neutral_vocab = getattr(self, self.case_name, lambda: "1")()
+        return gender_neutral_vocab
+
+    # ### Sent bias calculation zone ### #
 
     def _cal_cosine_inout(self, word1, word2):
         """
@@ -428,7 +515,9 @@ class EmbeddingTester(object):
 
         print("[{0}] sentiment bias is calculated.\n".format(similarity_method))
 
-    def similarity_test(self):
+    # ### Sent bias calculation zone end ### #
+
+    def pliot_similarity_test(self):
         """
         Test for similarity
         :return:
@@ -507,6 +596,6 @@ if __name__ == '__main__':
     # after manually selecting gender_vocab with changing file name 'gender_vocab_manuallyselected.txt'
     # do is_selected_gender_vocab=True
     et = EmbeddingTester(is_selected_gender_vocab=True, remove_oov=True)
-    et.sent_bias_test()
+    # et.sent_bias_test()
     # et.similarity_test()
 
