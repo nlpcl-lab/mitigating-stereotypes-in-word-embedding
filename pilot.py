@@ -19,6 +19,8 @@ COLLECTED_DATASET_DIR = 'source\\'
 MODEL_NAME = 'twitter_all'
 # MODEL_NAME = 'news2018'
 DELTA_THRESHOLD = 1
+L_CUTOFF = 5 / 100
+U_CUTOFF = 7.5 / 100
 
 start_time = time.time()
 
@@ -60,6 +62,7 @@ class EmbeddingTester(object):
         :param is_selected_gender_vocab: 'True' means selected_gender_vocab is prepared.
         :param remove_oov: remove words not in w2v.model vocab.
         """
+        # embedding models
         self.w2v_fname = config.MODEL_DIR + 'w2v_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.fasttext_fname = config.MODEL_DIR + 'fasttext_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.w2v_model = self.load_w2v_model(self.w2v_fname)
@@ -71,6 +74,11 @@ class EmbeddingTester(object):
         self.outv.index2word = self.w2v_model.wv.index2word
         self.outv.syn0 = self.w2v_model.syn1neg
 
+        # parameters
+        self.l_cutoff = int(len(self.w2v_model.wv.index2word) * L_CUTOFF)
+        self.u_cutoff = int(len(self.w2v_model.wv.index2word) * U_CUTOFF)
+
+        # vocabs
         if is_selected_gender_vocab:
             self.gender_vocab = self.get_selected_gender_vocab(remove_oov=remove_oov)
         else:
@@ -78,7 +86,7 @@ class EmbeddingTester(object):
         self.sentiment_vocab = self.get_sentiment_vocab(debug_mode=False, remove_oov=remove_oov)
         self.gender_pair_list = self.get_gender_pair_list(remove_oov=remove_oov)
         # self.gender_neutral_vocab = self.get_gender_neutral_vocab()
-        self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=3)
+        self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=4)
 
     def _remove_oov(self, input_list):
         """
@@ -350,12 +358,15 @@ class EmbeddingTester(object):
                     gender_neutral_vocab[word] = vocab_obj
                     write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
 
-            print(list(gender_neutral_vocab.items())[:10])
             print("Success to save gender_neutral vocabulary.")
 
         return gender_neutral_vocab
 
     def _gender_neutral_definition_2(self):
+        """
+        Setting 2: just remove the gender_specific_vocab of news.
+        :return:
+        """
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}_2.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             gender_neutral_vocab = OrderedDict()
@@ -365,12 +376,16 @@ class EmbeddingTester(object):
                 gender_neutral_vocab[word] = vocab_obj
                 write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
 
-            print(list(gender_neutral_vocab.items())[:10])
             print("Success to save gender_neutral_2 vocabulary.")
 
         return gender_neutral_vocab
 
     def _gender_neutral_definition_3(self):
+        """
+        Setting 3: remove noun particle / foreign words / digit and gender_specific suffix / prefix.
+                After that, choose the number of top 5% from the sorted vocab by count*rank.
+        :return:
+        """
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}_3.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             gender_neutral_vocab = OrderedDict()
@@ -392,17 +407,44 @@ class EmbeddingTester(object):
                 gender_neutral_vocab[word] = vocab_obj
                 write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
 
-            print(list(gender_neutral_vocab.items())[:10])
             print("Success to save gender_neutral_3 vocabulary.")
+
+        return gender_neutral_vocab
+
+    def _gender_neutral_definition_4(self):
+        """
+        Setting 4: remove noun particle / foreign words / digit and gender_specific suffix / prefix.
+                After that, only remain the data between upper and lower cut off based on frequency.
+        :return:
+        """
+        with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}_4.txt'.format(MODEL_NAME), "w", encoding='utf-8',
+                         errors='ignore') as write_file:
+            gender_neutral_vocab = OrderedDict()
+            tmp_list = []
+            w2v_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
+                         if not (word in self.gender_vocab['0'] + self.gender_vocab['1'] or
+                                 re.search(r'(/NP|/R|/n)$', word) or
+                                 re.search(r'(남/N|녀/N|여/N|남자/N|여자/N|모/N|부/N|딸/N|아들/N|엄마/N|아빠/N|형/N|언니/N|'
+                                           r'오빠/N|누나/N|계집/N|공주/N|왕자/N|아버지/N|어머니/N|아내/N|어미/N|아비/N|아범/N|'
+                                           r'어멈/N|게이/N|레즈비언/N|년/N|놈/N)$', word) or
+                                 re.search(r'^(남|녀|여|남자|여자|계집|공주|왕자|아버지|어머니|아내|어미|아비'
+                                           r'|아범|어멈|게이|레즈)', word))}
+            for word, vocab_obj in sorted(w2v_vocab.items(), key=lambda item: -item[1].count)[self.l_cutoff:self.u_cutoff]:
+                gender_neutral_vocab[word] = vocab_obj
+                write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
+
+            print("Success to save gender_neutral_4 vocabulary.")
 
         return gender_neutral_vocab
 
     def collect_gender_neutral_vocab(self, setting=1):
         self.case_name = "_gender_neutral_definition_" + str(setting)
         gender_neutral_vocab = getattr(self, self.case_name, lambda: "1")()
+        print("The number of gender_neutral words / without oov and duplications: {0} / same"
+              .format(len(gender_neutral_vocab.items())))
         return gender_neutral_vocab
 
-    # ### Sent bias calculation zone ### #
+    # ### bias calculation zone ### #
 
     def _cal_cosine_inout(self, word1, word2):
         """
@@ -488,7 +530,7 @@ class EmbeddingTester(object):
 
     def cal_sentiment_bias(self, similarity_method, group=2, setting=2, debug_mode=False):
         """
-        similarity_method: bias measures
+        similarity_method: bias are measured between two words.
         :return:
         """
         if group == 1:
@@ -514,8 +556,30 @@ class EmbeddingTester(object):
             print('{0} positive ({1:.6f})'.format('man' if total_score > 0 else 'woman', total_score))
 
         print("[{0}] sentiment bias is calculated.\n".format(similarity_method))
+        return 0
 
-    # ### Sent bias calculation zone end ### #
+    def cal_gender_bias(self, similarity_method, debug_mode=False):
+        gender_neutral_words = self.gender_neutral_vocab.keys()
+        stereotype_list = []
+        self.case_name = "_cal_" + similarity_method
+
+        for neutral_word in gender_neutral_words:
+            stereotype_list.append((neutral_word,
+                                      sum([getattr(self, self.case_name, lambda: "cosine_inin")(man_word, neutral_word)
+                                          - getattr(self, self.case_name, lambda: "cosine_inin")(woman_word,
+                                                                                                 neutral_word)
+                                          for (man_word, woman_word) in self.gender_pair_list])))
+
+        _, stereotype_scores = zip(*stereotype_list)
+        print("top difference (man): {0}".format(sorted(stereotype_list, key=lambda item: -item[1])[:10]))
+        print("top difference (woman): {0}".format(sorted(stereotype_list, key=lambda item: item[1])[:10]))
+        total_score_avg, total_score_std = np.average(stereotype_scores), np.std(stereotype_scores)
+        print('stereotype score ({0}): lean to {1} ({2:.6f}) / std {3:.6f}'
+              .format(similarity_method, 'man' if total_score_avg > 0 else 'woman', total_score_avg, total_score_std))
+
+        return 0
+
+    # ### bias calculation zone end ### #
 
     def pliot_similarity_test(self):
         """
@@ -574,6 +638,12 @@ class EmbeddingTester(object):
         self.cal_sentiment_bias(similarity_method='cosine_sigmoid_inout')
         self.cal_sentiment_bias(similarity_method='relative_dist')
 
+    def gender_bias_test(self):
+        self.cal_gender_bias(similarity_method='cosine_inout')
+        self.cal_gender_bias(similarity_method='cosine_inin')
+        self.cal_gender_bias(similarity_method='cosine_sigmoid_inout')
+        self.cal_gender_bias(similarity_method='relative_dist')
+
     def testtest(self):
         gender_diff_vec_list = []
         sentiment_invocab_list = []
@@ -597,5 +667,6 @@ if __name__ == '__main__':
     # do is_selected_gender_vocab=True
     et = EmbeddingTester(is_selected_gender_vocab=True, remove_oov=True)
     # et.sent_bias_test()
+    et.gender_bias_test()
     # et.similarity_test()
 
