@@ -87,6 +87,16 @@ class EmbeddingTester(object):
         self.gender_pair_list = self.get_gender_pair_list(remove_oov=remove_oov)
         # self.gender_neutral_vocab = self.get_gender_neutral_vocab()
         self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=4)
+        gender_removed_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
+                                     if not (word in self.gender_vocab['0'] + self.gender_vocab['1'] or
+                                             re.search(r'(/NP|/R|/n)$', word) or
+                                             re.search(r'(남/N|녀/N|여/N|남자/N|여자/N|모/N|부/N|딸/N|아들/N|엄마/N|'
+                                                       r'아빠/N|형/N|언니/N|오빠/N|누나/N|계집/N|공주/N|왕자/N|'
+                                                       r'아버지/N|어머니/N|아내/N|어미/N|아비/N|아범/N|어멈/N|게이/N|'
+                                                       r'레즈비언/N|년/N|놈/N)$', word) or
+                                             re.search(r'^(남|녀|여|남자|여자|계집|공주|왕자|아버지|어머니|아내|어미|'
+                                                       r'아비|아범|어멈|게이|레즈)', word))}
+        self.gender_removed_vocab = sorted(gender_removed_vocab.items(), key=lambda item: -item[1].count)
 
     def _remove_oov(self, input_list):
         """
@@ -341,12 +351,19 @@ class EmbeddingTester(object):
 
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
+            pass
             analogy_pair_score_dict = {}
 
-            for (man_word, woman_word) in self.gender_pair_list:
+            """
+            for (man_word, woman_word) in self.gender_pair_list[:5]:
+                for word1 in list(set(self.gender_removed_vocab[20000:30000]) - set():
+                    for word2 in self.gender_removed_vocab[20000:30000]:
+                        if word
+
                 analogy_pair_score_dict[(man_word, woman_word, word1, word2)]
 
         self.w2v_model.wv.vocab
+            """
 
     def _gender_neutral_definition_1(self):
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
@@ -390,15 +407,7 @@ class EmbeddingTester(object):
                          errors='ignore') as write_file:
             gender_neutral_vocab = OrderedDict()
             tmp_list = []
-            w2v_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
-                         if not (word in self.gender_vocab['0'] + self.gender_vocab['1'] or
-                         re.search(r'(/NP|/R|/n)$', word) or
-                         re.search(r'(남/N|녀/N|여/N|남자/N|여자/N|모/N|부/N|딸/N|아들/N|엄마/N|아빠/N|형/N|언니/N|'
-                                  r'오빠/N|누나/N|계집/N|공주/N|왕자/N|아버지/N|어머니/N|아내/N|어미/N|아비/N|아범/N|'
-                                  r'어멈/N|게이/N|레즈비언/N|년/N|놈/N)$', word) or
-                         re.search(r'^(남|녀|여|남자|여자|계집|공주|왕자|아버지|어머니|아내|어미|아비'
-                                           r'|아범|어멈|게이|레즈)', word))}
-            sorted_w2v_list = sorted(w2v_vocab.items(), key=lambda item: -item[1].count)
+            sorted_w2v_list = sorted(self.gender_removed_vocab.items(), key=lambda item: -item[1].count)
             for i, (word, vocab_obj) in enumerate(sorted_w2v_list):
                 # key=lambda item: -(item[1].count * item[0]):
                 tmp_list.append((word, vocab_obj, i))
@@ -421,15 +430,7 @@ class EmbeddingTester(object):
                          errors='ignore') as write_file:
             gender_neutral_vocab = OrderedDict()
             tmp_list = []
-            w2v_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
-                         if not (word in self.gender_vocab['0'] + self.gender_vocab['1'] or
-                                 re.search(r'(/NP|/R|/n)$', word) or
-                                 re.search(r'(남/N|녀/N|여/N|남자/N|여자/N|모/N|부/N|딸/N|아들/N|엄마/N|아빠/N|형/N|언니/N|'
-                                           r'오빠/N|누나/N|계집/N|공주/N|왕자/N|아버지/N|어머니/N|아내/N|어미/N|아비/N|아범/N|'
-                                           r'어멈/N|게이/N|레즈비언/N|년/N|놈/N)$', word) or
-                                 re.search(r'^(남|녀|여|남자|여자|계집|공주|왕자|아버지|어머니|아내|어미|아비'
-                                           r'|아범|어멈|게이|레즈)', word))}
-            for word, vocab_obj in sorted(w2v_vocab.items(), key=lambda item: -item[1].count)[self.l_cutoff:self.u_cutoff]:
+            for word, vocab_obj in sorted(self.gender_removed_vocab.items(), key=lambda item: -item[1].count)[self.l_cutoff:self.u_cutoff]:
                 gender_neutral_vocab[word] = vocab_obj
                 write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
 
