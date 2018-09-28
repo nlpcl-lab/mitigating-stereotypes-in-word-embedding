@@ -318,6 +318,7 @@ class VocabCounter(object):
             count += len(sent)
         print(count-2)
 
+
 # not used because of time complexity
 class W2vManager(object):
     def __init__(self, mtype='sg', hs=0, neg=10, embed_dim=300, sample=10 ^ -5, alpha=0.025, min_alpha=0.0001, seed=1,

@@ -322,7 +322,7 @@ class EmbeddingTester(object):
 
     def make_test_analogy(self):
         """
-        :return: only print
+        S(x,y) = cos(a-b,x-y) if x-y< = 1 else 0
         """
         def delta_threshold(word1, word2):
             return True if np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2]) <= DELTA_THRESHOLD else False
@@ -644,20 +644,6 @@ class EmbeddingTester(object):
         self.cal_gender_bias(similarity_method='cosine_sigmoid_inout')
         self.cal_gender_bias(similarity_method='relative_dist')
 
-    def testtest(self):
-        gender_diff_vec_list = []
-        sentiment_invocab_list = []
-        """
-        for (word1, word2) in self.gender_pair_list:
-            print(word1, word2, self.w2v_model.most_similar([word1], negative=[word2]))
-            gender_diff_vec_list.append(self.w2v_model[word1] - self.w2v_model[word2])
-
-        for word in self.sentiment_vocab['positive'] + self.sentiment_vocab['negative']:
-            if word in self.w2v_model.wv.vocab:
-                sentiment_invocab_list.append(word)
-            else:
-                print(word)
-        """
 
 if __name__ == '__main__':
     # First, is_selected_gender_vocab=False
@@ -668,5 +654,5 @@ if __name__ == '__main__':
     et = EmbeddingTester(is_selected_gender_vocab=True, remove_oov=True)
     # et.sent_bias_test()
     et.gender_bias_test()
-    # et.similarity_test()
+    # et.prior_similarity_test()
 
