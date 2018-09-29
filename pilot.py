@@ -19,10 +19,12 @@ COLLECTED_DATASET_DIR = 'source\\'
 MODEL_NAME = 'twitter_all'
 # MODEL_NAME = 'news2018'
 DELTA_THRESHOLD = 1
+GAMMA = 0.001   # Linguistic Regularities in Sparse and Explicit Word Representations
 L_CUTOFF = 5 / 100
 U_CUTOFF = 7.5 / 100
 
 start_time = time.time()
+
 
 def read_community_posting_and_sav_file():
     # fname -> json formatted file
@@ -52,6 +54,7 @@ def read_community_posting_and_sav_file():
                      exit()
                  print(line)
 
+
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
 
@@ -66,6 +69,7 @@ class EmbeddingTester(object):
         self.w2v_fname = config.MODEL_DIR + 'w2v_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.fasttext_fname = config.MODEL_DIR + 'fasttext_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.w2v_model = self.load_w2v_model(self.w2v_fname)
+        self.w2v_model.init_sims()
         # self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
 
         # For in-out computation
@@ -85,8 +89,6 @@ class EmbeddingTester(object):
             self.collect_gender_vocab(self.w2v_model)
         self.sentiment_vocab = self.get_sentiment_vocab(debug_mode=False, remove_oov=remove_oov)
         self.gender_pair_list = self.get_gender_pair_list(remove_oov=remove_oov)
-        # self.gender_neutral_vocab = self.get_gender_neutral_vocab()
-        self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=4)
         gender_removed_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
                                      if not (word in self.gender_vocab['0'] + self.gender_vocab['1'] or
                                              re.search(r'(/NP|/R|/n)$', word) or
@@ -96,7 +98,8 @@ class EmbeddingTester(object):
                                                        r'레즈비언/N|년/N|놈/N)$', word) or
                                              re.search(r'^(남|녀|여|남자|여자|계집|공주|왕자|아버지|어머니|아내|어미|'
                                                        r'아비|아범|어멈|게이|레즈)', word))}
-        self.gender_removed_vocab = sorted(gender_removed_vocab.items(), key=lambda item: -item[1].count)
+        self.gender_removed_vocab = OrderedDict(sorted(gender_removed_vocab.items(), key=lambda item: -item[1].count))
+        self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=4)
 
     def _remove_oov(self, input_list):
         """
@@ -337,7 +340,7 @@ class EmbeddingTester(object):
         def delta_threshold(word1, word2):
             return True if np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2]) <= DELTA_THRESHOLD else False
 
-        def calculate_cosine_score(w2v_model, man_word, woman_word):
+        def calculate_cosine_score(w2v_model, a, b, x):
             """
             Given gender pair (a,b), generate (x,y) pair which satisfies within delta threshold in descending order.
             :param w2v_model:
@@ -345,25 +348,28 @@ class EmbeddingTester(object):
             :param woman_word:
             :return:
             """
-            a_minus_b = w2v_model[man_word] - w2v_model[woman_word]
-            dists = np.dot(w2v_model.wv.syn0norm, a_minus_b)
-            best = np.argsort(dists)[::-1]   # 이건 '단어(x)'를 점수 높은 순으로 배열. (x-y)를 생성해야함.
+            # a_minus_b = w2v_model[man_word] - w2v_model[woman_word]
+            cos_xy = np.dot(w2v_model.wv.syn0norm, w2v_model[x])
+            cos_xb = np.dot(self.w2v_model[x], w2v_model[b])
+            cos_ya = np.dot(w2v_model.wv.syn0norm, w2v_model[a])
+            print(np.shape(cos_xy), np.shape(cos_xb))
+            y_list = (1 + cos_xy)(1 + cos_xb) / (1 + cos_ya + GAMMA)
+
+            # remove if x==y
+
+            # best = np.argsort(dists)[::-1]   # 이건 '단어(x)'를 점수 높은 순으로 배열. (x-y)를 생성해야함.
+            return np.argsort(y_list)[:1:-1]
 
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
-            pass
             analogy_pair_score_dict = {}
-
-            """
-            for (man_word, woman_word) in self.gender_pair_list[:5]:
-                for word1 in list(set(self.gender_removed_vocab[20000:30000]) - set():
-                    for word2 in self.gender_removed_vocab[20000:30000]:
-                        if word
-
-                analogy_pair_score_dict[(man_word, woman_word, word1, word2)]
+            cd_list = list(set(list(self.gender_removed_vocab.keys())[20000:30000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
+            for (a, b) in self.gender_pair_list[:5]:
+                for x in cd_list:
+                    y = calculate_cosine_score(self.w2v_model, a, b, x)
+                    analogy_pair_score_dict[(a,b,x,y)] = y
 
         self.w2v_model.wv.vocab
-            """
 
     def _gender_neutral_definition_1(self):
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
@@ -654,6 +660,7 @@ if __name__ == '__main__':
     # do is_selected_gender_vocab=True
     et = EmbeddingTester(is_selected_gender_vocab=True, remove_oov=True)
     # et.sent_bias_test()
-    et.gender_bias_test()
+    # et.gender_bias_test()
+    et.make_test_analogy()
     # et.prior_similarity_test()
 
