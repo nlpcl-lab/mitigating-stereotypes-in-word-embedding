@@ -2,6 +2,7 @@
 # Emotional_Word_Dictionary_RES_v1.2: 정규표현식 ^[a-zA-Z0-9]+\t[a-zA-Z0-9_]+\t[가-힣]+/[a-zA-Z]+\t 를 통해 오류줄 색인 가능.
 # gender / sentiment / gender_pair words are filtered if it is oov, duplicated word, or words in both groups.
 # e.g. '화나/A' in both a positive vocab and a negative vocab.
+# w2v_model.wv.syn0norm is setting after most_similar() used or init_sims() used
 
 import json, codecs, time, re, os
 import config
@@ -69,7 +70,7 @@ class EmbeddingTester(object):
         self.w2v_fname = config.MODEL_DIR + 'w2v_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.fasttext_fname = config.MODEL_DIR + 'fasttext_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.w2v_model = self.load_w2v_model(self.w2v_fname)
-        self.w2v_model.init_sims()
+        self.w2v_model.init_sims()                          # for using wv.syn0norm
         # self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
 
         # For in-out computation
@@ -348,17 +349,29 @@ class EmbeddingTester(object):
             :param woman_word:
             :return:
             """
-            # a_minus_b = w2v_model[man_word] - w2v_model[woman_word]
+            # (1 + cos_xy)(1 + cos_xb)) / (1 + cos_ya + GAMMA)
             cos_xy = np.dot(w2v_model.wv.syn0norm, w2v_model[x])
             cos_xb = np.dot(self.w2v_model[x], w2v_model[b])
             cos_ya = np.dot(w2v_model.wv.syn0norm, w2v_model[a])
-            print(np.shape(cos_xy), np.shape(cos_xb))
-            y_list = (1 + cos_xy)(1 + cos_xb) / (1 + cos_ya + GAMMA)
+            elem1 = np.add(np.full(np.shape(cos_xy), 1), cos_xy)
+            elem2 = np.full(np.shape(cos_xy), 1 + cos_xb)
+            elem3 = np.add(np.full(np.shape(cos_xy), 1 + GAMMA), cos_ya)
+            elem123 = np.true_divide(np.multiply(elem1, elem2), elem3)
+            sort_index = np.argsort(-elem123)
+            for i in range(np.shape(cos_xy)[0]):
+                print('a b x y {} {} {} {} delta {}'.format(a, b, x, w2v_model.wv.index2word[sort_index[i]], delta_threshold(x, w2v_model.wv.index2word[sort_index[i]])))
+                if i > 10:
+                    break
 
-            # remove if x==y
-
-            # best = np.argsort(dists)[::-1]   # 이건 '단어(x)'를 점수 높은 순으로 배열. (x-y)를 생성해야함.
-            return np.argsort(y_list)[:1:-1]
+            for i in range(np.shape(cos_xy)[0]):
+                y = w2v_model.wv.index2word[sort_index[i]]
+                if x == y or a == x or b == y or not delta_threshold(x, y):
+                    continue
+                else:
+                    y_score = elem123[sort_index[i]
+                    break
+            print('result a b x y y_score {} {} {} {} {} delta {}'.format(a, b, x, y, y_score delta_threshold(x, y)))
+            return y, y_score
 
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
@@ -366,8 +379,8 @@ class EmbeddingTester(object):
             cd_list = list(set(list(self.gender_removed_vocab.keys())[20000:30000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             for (a, b) in self.gender_pair_list[:5]:
                 for x in cd_list:
-                    y = calculate_cosine_score(self.w2v_model, a, b, x)
-                    analogy_pair_score_dict[(a,b,x,y)] = y
+                    y, y_score = calculate_cosine_score(self.w2v_model, a, b, x)
+                    analogy_pair_score_dict[(a, b, x, y)] = y_score
 
         self.w2v_model.wv.vocab
 
