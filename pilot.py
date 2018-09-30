@@ -351,38 +351,62 @@ class EmbeddingTester(object):
             """
             # (1 + cos_xy)(1 + cos_xb)) / (1 + cos_ya + GAMMA)
             cos_xy = np.dot(w2v_model.wv.syn0norm, w2v_model[x])
-            cos_xb = np.dot(self.w2v_model[x], w2v_model[b])
+            cos_xb = np.dot(w2v_model[x], w2v_model[b])
             cos_ya = np.dot(w2v_model.wv.syn0norm, w2v_model[a])
             elem1 = np.add(np.full(np.shape(cos_xy), 1), cos_xy)
             elem2 = np.full(np.shape(cos_xy), 1 + cos_xb)
             elem3 = np.add(np.full(np.shape(cos_xy), 1 + GAMMA), cos_ya)
             elem123 = np.true_divide(np.multiply(elem1, elem2), elem3)
             sort_index = np.argsort(-elem123)
+            """
             for i in range(np.shape(cos_xy)[0]):
                 print('a b x y {} {} {} {} delta {}'.format(a, b, x, w2v_model.wv.index2word[sort_index[i]], delta_threshold(x, w2v_model.wv.index2word[sort_index[i]])))
                 if i > 10:
                     break
-
+            """
+            y, y_score = '', 0
+            count = 0                                   # the number of search trial with delta threshold
             for i in range(np.shape(cos_xy)[0]):
                 y = w2v_model.wv.index2word[sort_index[i]]
-                if x == y or a == x or b == y or not delta_threshold(x, y):
+                if x == y or a == x or b == y or a == y:
                     continue
-                else:
-                    y_score = elem123[sort_index[i]
+                elif not delta_threshold(x, y) and count < 1000:
+                    count += 1
+                    continue
+                elif not delta_threshold(x, y) and count >= 1000:
+                    y_score = 0
                     break
-            print('result a b x y y_score {} {} {} {} {} delta {}'.format(a, b, x, y, y_score delta_threshold(x, y)))
-            return y, y_score
+                else:
+                    y_score = elem123[sort_index[i]]
+                    break
+            print('result a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y), count))
+            y_score2 = np.dot(w2v_model[x] - w2v_model[y], w2v_model[a] - w2v_model[b]) / \
+                       (np.linalg.norm(w2v_model[x] - w2v_model[y]) * np.linalg.norm(w2v_model[a] - w2v_model[b]))
+            return y, y_score, count, y_score2
 
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             analogy_pair_score_dict = {}
             cd_list = list(set(list(self.gender_removed_vocab.keys())[20000:30000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             for (a, b) in self.gender_pair_list[:5]:
+                write_file.write('a\tb\tx\ty\ty_score\tcount\n')
                 for x in cd_list:
-                    y, y_score = calculate_cosine_score(self.w2v_model, a, b, x)
-                    analogy_pair_score_dict[(a, b, x, y)] = y_score
+                    y, y_score, count, y_score2 = calculate_cosine_score(self.w2v_model, a, b, x)
+                    """
+                    Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
+                    """
+                    if y_score > 0:
+                        analogy_pair_score_dict[(a, b, x, y)] = (y_score, y_score2)
+                        write_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, y, y_score, count, y_score2))
 
-        self.w2v_model.wv.vocab
+                write_file.write('top 100 list - score1\n')
+                for (a, b, x, y), y_score in sorted(analogy_pair_score_dict.items(), key=lambda item: -item[1][0])[:100]:
+                    write_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, y, y_score, count, y_score2))
+                write_file.write('top 100 list - score2\n')
+                for (a, b, x, y), y_score in sorted(analogy_pair_score_dict.items(), key=lambda item: -item[1][1])[:100]:
+                    write_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, y, y_score, count, y_score2))
+
+        return 0
 
     def _gender_neutral_definition_1(self):
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
