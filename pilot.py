@@ -349,7 +349,7 @@ class EmbeddingTester(object):
             :param woman_word:
             :return:
             """
-            # (1 + cos_xy)(1 + cos_xb)) / (1 + cos_ya + GAMMA)
+            # 3COSMUL: (1 + cos_xy)(1 + cos_xb)) / (1 + cos_ya + GAMMA)
             cos_xy = np.dot(w2v_model.wv.syn0norm, w2v_model[x])
             cos_xb = np.dot(w2v_model[x], w2v_model[b])
             cos_ya = np.dot(w2v_model.wv.syn0norm, w2v_model[a])
@@ -379,7 +379,9 @@ class EmbeddingTester(object):
                 else:
                     y_score = elem123[sort_index[i]]
                     break
-            print('result a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y), count))
+            # print('result a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y), count))
+
+            # 3COSADD:
             y_score2 = np.dot(w2v_model[x] - w2v_model[y], w2v_model[a] - w2v_model[b]) / \
                        (np.linalg.norm(w2v_model[x] - w2v_model[y]) * np.linalg.norm(w2v_model[a] - w2v_model[b]))
             return y, y_score, count, y_score2
@@ -390,20 +392,22 @@ class EmbeddingTester(object):
             cd_list = list(set(list(self.gender_removed_vocab.keys())[20000:30000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             for (a, b) in self.gender_pair_list[:5]:
                 write_file.write('a\tb\tx\ty\ty_score\tcount\n')
-                for x in cd_list:
+                for i, x in enumerate(cd_list):
+                    if i % (len(cd_list)/100 - 1) == 0:
+                        print("{:.1f}% of neutral words have done with <{}, {}>".format(i * 100 / len(cd_list), a, b))
                     y, y_score, count, y_score2 = calculate_cosine_score(self.w2v_model, a, b, x)
                     """
                     Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
                     """
                     if y_score > 0:
-                        analogy_pair_score_dict[(a, b, x, y)] = (y_score, y_score2)
+                        analogy_pair_score_dict[(a, b, x, y)] = (y_score, y_score2, count)
                         write_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, y, y_score, count, y_score2))
 
                 write_file.write('top 100 list - score1\n')
-                for (a, b, x, y), y_score in sorted(analogy_pair_score_dict.items(), key=lambda item: -item[1][0])[:100]:
+                for (a, b, x, y), (y_score, y_score2, count) in sorted(analogy_pair_score_dict.items(), key=lambda item: -item[1][0])[:100]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, y, y_score, count, y_score2))
                 write_file.write('top 100 list - score2\n')
-                for (a, b, x, y), y_score in sorted(analogy_pair_score_dict.items(), key=lambda item: -item[1][1])[:100]:
+                for (a, b, x, y), (y_score, y_score2, count) in sorted(analogy_pair_score_dict.items(), key=lambda item: -item[1][1])[:100]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, y, y_score, count, y_score2))
 
         return 0
