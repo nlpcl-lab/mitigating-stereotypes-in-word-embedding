@@ -390,7 +390,7 @@ class EmbeddingTester(object):
             return y, y_score, count
 
         def _cal_pair(w2v_model, a, b, x, count_threshold=1000):
-            vocab_size = len(w2v_model.wv.index2word)
+            vocab_size = (len(w2v_model.wv.index2word),)
             # np.dot(nd-array, 1d-array) => 1d-array (y_scores of all vocabs)
             elem123 = np.dot(w2v_model[x] - w2v_model.wv.syn0norm, w2v_model[a] - w2v_model[b]) / \
                       (np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=1) * (np.linalg.norm(w2v_model[a] - w2v_model[b])))
@@ -430,7 +430,7 @@ class EmbeddingTester(object):
             analogy_pair_score_dict = {}
             x_list = list(set(list(self.gender_removed_vocab.keys())[20000:30000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             for (a, b) in self.gender_pair_list[:5]:
-                write_file.write('a\tb\tx\ty\ty_score\tcount\n')
+                write_file.write('a\tb\tx\tmul\tadd\tpair\n')
                 for i, x in enumerate(x_list):
                     if i % (len(x_list)/100 - 1) == 0:
                         print("{:.1f}% of neutral words have done with <{}, {}>".format(i * 100 / len(x_list), a, b))
@@ -440,20 +440,20 @@ class EmbeddingTester(object):
                     Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
                     """
                     if mul_tuple[2] > 0 or add_tuple[2] > 0 or pair_tuple[2] > 0:
-                        analogy_pair_score_dict[(a, b, x, y)] = (mul_tuple, add_tuple, pair_tuple)
+                        analogy_pair_score_dict[(a, b, x)] = (mul_tuple, add_tuple, pair_tuple)
                         write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
 
                 write_file.write('top 150 list - mul\n')
-                for (a, b, x, y), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
-                                                                               key=lambda item: -item[0][1])[:150]:
+                for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
+                                                                            key=lambda item: -item[0][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
                 write_file.write('top 150 list - add\n')
-                for (a, b, x, y), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
-                                                                               key=lambda item: -item[1][1])[:150]:
+                for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
+                                                                            key=lambda item: -item[1][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
                 write_file.write('top 150 list - pair\n')
-                for (a, b, x, y), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
-                                                                               key=lambda item: -item[2][1])[:150]:
+                for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
+                                                                            key=lambda item: -item[2][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
         return 0
 
