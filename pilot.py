@@ -3,6 +3,8 @@
 # gender / sentiment / gender_pair words are filtered if it is oov, duplicated word, or words in both groups.
 # e.g. '화나/A' in both a positive vocab and a negative vocab.
 # w2v_model.wv.syn0norm is setting after most_similar() used or init_sims() used
+# a = re.findall('\([^)]*\)',s) => ['(1,2,3,4,5)', '(5,4,3,2,1)']
+
 
 import json, codecs, time, re, os
 import config
@@ -336,7 +338,7 @@ class EmbeddingTester(object):
 
     def make_test_analogy(self):
         """
-        S(x,y) = cos(a-b,x-y) if x-y< = 1 else 0
+        S(x,y) = three methods if x-y< = 1 else 0
         """
         def delta_threshold(word1, word2):
             return True if np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2]) <= DELTA_THRESHOLD else False
@@ -346,7 +348,7 @@ class EmbeddingTester(object):
             count = 0  # the number of search trial with delta threshold
             for i in range(vocab_size[0]):
                 y = w2v_model.wv.index2word[sort_index[i]]
-                if x == y or a == x or b == y or a == y:
+                if x == y or a == x or b == y or a == y or y not in self.gender_removed_vocab:
                     continue
                 elif not delta_threshold(x, y) and count < count_threshold:
                     count += 1
@@ -360,7 +362,7 @@ class EmbeddingTester(object):
 
             return y, y_score, count
 
-        def _cal_cosmul(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=1000):
+        def _cal_cosmul(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=1000):
             """
             :return:
             y = the word
@@ -379,9 +381,9 @@ class EmbeddingTester(object):
                                                                              count))
             return y, y_score, count
 
-        def _cal_cosadd(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=1000):
+        def _cal_cosadd(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=1000):
             vocab_size = np.shape(cos_yb)
-            elem123 = np.true_divide(np.add(cos_yb, cos_yx), cos_ya)
+            elem123 = np.add(cos_yb, cos_yx) - cos_ya
             sort_index = np.argsort(-elem123)
             y, y_score, count = _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
@@ -389,11 +391,13 @@ class EmbeddingTester(object):
                                                                              count))
             return y, y_score, count
 
-        def _cal_pair(w2v_model, a, b, x, count_threshold=1000):
+        def _cal_pair(w2v_model, a, b, x, delta_list, count_threshold=1000):
             vocab_size = (len(w2v_model.wv.index2word),)
             # np.dot(nd-array, 1d-array) => 1d-array (y_scores of all vocabs)
-            elem123 = np.dot(w2v_model[x] - w2v_model.wv.syn0norm, w2v_model[a] - w2v_model[b]) / \
-                      (np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=1) * (np.linalg.norm(w2v_model[a] - w2v_model[b])))
+            elem1 = w2v_model[x] - w2v_model.wv.syn0norm
+            elem2 = w2v_model[a] - w2v_model[b]
+            elem3 = delta_list
+            elem123 = np.dot(elem1, elem2) / elem3 * (np.linalg.norm(elem2))
             sort_index = np.argsort(-elem123)
             y, y_score, count = _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
@@ -413,26 +417,27 @@ class EmbeddingTester(object):
             cos_yb = np.dot(w2v_model.wv.syn0norm, w2v_model[b])
             cos_yx = np.dot(w2v_model.wv.syn0norm, w2v_model[x])
             cos_ya = np.dot(w2v_model.wv.syn0norm, w2v_model[a])
+            delta_list = np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=1)
 
             # 3COSMUL: (1 + cos_yb)(1 + cos_yx)) / (1 + cos_ya + GAMMA)
-            mul_score_tuple = _cal_cosmul(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
+            mul_score_tuple = _cal_cosmul(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
 
             # 3COSADD: cos_yb + cos_yx - cos_ya
-            add_score_tuple = _cal_cosadd(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
+            add_score_tuple = _cal_cosadd(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
 
             # PAIR: cos(a - b, x - y)
-            pair_score_tuple = _cal_pair(w2v_model, a, b, x, count_threshold=count_threshold)
+            pair_score_tuple = _cal_pair(w2v_model, a, b, x, delta_list, count_threshold=count_threshold)
 
             return mul_score_tuple, add_score_tuple, pair_score_tuple
 
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             analogy_pair_score_dict = {}
-            x_list = list(set(list(self.gender_removed_vocab.keys())[20000:30000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
+            x_list = list(set(list(self.gender_removed_vocab.keys())[20000:20200]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             for (a, b) in self.gender_pair_list[:5]:
                 write_file.write('a\tb\tx\tmul\tadd\tpair\n')
                 for i, x in enumerate(x_list):
-                    if i % (len(x_list)/100 - 1) == 0:
+                    if i % int(len(x_list)/100 - 1) == 0:
                         print("{:.1f}% of neutral words have done with <{}, {}>".format(i * 100 / len(x_list), a, b))
 
                     mul_tuple, add_tuple, pair_tuple = calculate_cosine_scores(self.w2v_model, a, b, x)
@@ -443,18 +448,20 @@ class EmbeddingTester(object):
                         analogy_pair_score_dict[(a, b, x)] = (mul_tuple, add_tuple, pair_tuple)
                         write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
 
+                # items(): item[a][b][c], a:0 or 1(key or value) b: 0~2 (tuple th) c: 0~2(y, y_score, count)
                 write_file.write('top 150 list - mul\n')
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
-                                                                            key=lambda item: -item[0][1])[:150]:
+                                                                            key=lambda item: -item[1][0][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
                 write_file.write('top 150 list - add\n')
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
-                                                                            key=lambda item: -item[1][1])[:150]:
+                                                                            key=lambda item: -item[1][1][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
                 write_file.write('top 150 list - pair\n')
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
-                                                                            key=lambda item: -item[2][1])[:150]:
+                                                                            key=lambda item: -item[1][2][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
+
         return 0
 
     def _gender_neutral_definition_1(self):
