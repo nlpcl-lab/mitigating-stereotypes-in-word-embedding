@@ -103,6 +103,7 @@ class EmbeddingTester(object):
                                                        r'아비|아범|어멈|게이|레즈)', word))}
         self.gender_removed_vocab = OrderedDict(sorted(gender_removed_vocab.items(), key=lambda item: -item[1].count))
         self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=4)
+        self.rep_idx = {word: i for i, word in enumerate(self.w2v_model.wv.index2word)}
 
     def _remove_oov(self, input_list):
         """
@@ -391,9 +392,10 @@ class EmbeddingTester(object):
                                                                              count))
             return y, y_score, count
 
-        def _cal_pair(w2v_model, a, b, x, delta_list, count_threshold=1000):
+        def _cal_pair(w2v_model, a, b, x_index_list, delta_list, count_threshold=1000):
             vocab_size = (len(w2v_model.wv.index2word),)
             # np.dot(nd-array, 1d-array) => 1d-array (y_scores of all vocabs)
+            elem1 = w2v_model.wv.syn0norm[x_index_list, :][:, None] - w2v_model.wv.syn0norm
             elem1 = w2v_model[x] - w2v_model.wv.syn0norm
             elem2 = w2v_model[a] - w2v_model[b]
             elem3 = delta_list
@@ -405,7 +407,7 @@ class EmbeddingTester(object):
                                                                            count))
             return y, y_score, count
 
-        def calculate_cosine_scores(w2v_model, a, b, x):
+        def calculate_cosine_scores(w2v_model, a, b, x_index_list, write_file):
             """
             Given gender pair (a,b), generate (x,y) pair which satisfies within delta threshold in descending order.
             :param w2v_model:
@@ -420,13 +422,13 @@ class EmbeddingTester(object):
             delta_list = np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=1)
 
             # 3COSMUL: (1 + cos_yb)(1 + cos_yx)) / (1 + cos_ya + GAMMA)
-            mul_score_tuple = _cal_cosmul(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
-
+            # mul_score_tuple = _cal_cosmul(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
+            mul_score_tuple = ('예시/N', 0, 0)
             # 3COSADD: cos_yb + cos_yx - cos_ya
-            add_score_tuple = _cal_cosadd(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
-
+            # add_score_tuple = _cal_cosadd(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
+            add_score_tuple = ('예시/N', 0, 0)
             # PAIR: cos(a - b, x - y)
-            pair_score_tuple = _cal_pair(w2v_model, a, b, x, delta_list, count_threshold=count_threshold)
+            pair_score_tuple = _cal_pair(w2v_model, a, b, x_index_list, delta_list, count_threshold=count_threshold)
 
             return mul_score_tuple, add_score_tuple, pair_score_tuple
 
@@ -434,19 +436,23 @@ class EmbeddingTester(object):
                          errors='ignore') as write_file:
             analogy_pair_score_dict = {}
             x_list = list(set(list(self.gender_removed_vocab.keys())[20000:20200]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
+            x_index_list = [self.rep_idx[x] for x in x_list]
             for (a, b) in self.gender_pair_list[:5]:
                 write_file.write('a\tb\tx\tmul\tadd\tpair\n')
+                mul_tuple, add_tuple, pair_tuple = calculate_cosine_scores(self.w2v_model, a, b, x_index_list, write_file)
+                """
                 for i, x in enumerate(x_list):
                     if i % int(len(x_list)/100 - 1) == 0:
                         print("{:.1f}% of neutral words have done with <{}, {}>".format(i * 100 / len(x_list), a, b))
 
                     mul_tuple, add_tuple, pair_tuple = calculate_cosine_scores(self.w2v_model, a, b, x)
-                    """
-                    Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
-                    """
+                    
+                    # Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
+                    
                     if mul_tuple[2] > 0 or add_tuple[2] > 0 or pair_tuple[2] > 0:
                         analogy_pair_score_dict[(a, b, x)] = (mul_tuple, add_tuple, pair_tuple)
                         write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
+                """
 
                 # items(): item[a][b][c], a:0 or 1(key or value) b: 0~2 (tuple th) c: 0~2(y, y_score, count)
                 write_file.write('top 150 list - mul\n')
