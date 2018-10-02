@@ -392,10 +392,9 @@ class EmbeddingTester(object):
                                                                              count))
             return y, y_score, count
 
-        def _cal_pair(w2v_model, a, b, x_index_list, delta_list, count_threshold=1000):
+        def _cal_pair(w2v_model, a, b, x, delta_list, count_threshold=1000):
             vocab_size = (len(w2v_model.wv.index2word),)
             # np.dot(nd-array, 1d-array) => 1d-array (y_scores of all vocabs)
-            elem1 = w2v_model.wv.syn0norm[x_index_list, :][:, None] - w2v_model.wv.syn0norm
             elem1 = w2v_model[x] - w2v_model.wv.syn0norm
             elem2 = w2v_model[a] - w2v_model[b]
             elem3 = delta_list
@@ -404,6 +403,19 @@ class EmbeddingTester(object):
             y, y_score, count = _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
             print('PAIR a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
+                                                                           count))
+            return y, y_score, count
+
+        def _cal_pair_compressed(w2v_model, a, b, x_index_list, cos_yb, cos_yx, cos_ya, count_threshold=1000):
+            vocab_size = (len(w2v_model.wv.index2word),)
+            elem1 = w2v_model.wv.syn0norm[x_index_list, :][:, None] - w2v_model.wv.syn0norm
+            elem2 = w2v_model[a] - w2v_model[b]
+            elem3 = np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=2)
+            elem123 = np.dot(elem1, elem2) / elem3 * (np.linalg.norm(elem2))
+            sort_index = np.argsort(-elem123)
+            y, y_score, count = _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold)
+
+            print('PAIR_COMP a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
                                                                            count))
             return y, y_score, count
 
@@ -428,7 +440,8 @@ class EmbeddingTester(object):
             # add_score_tuple = _cal_cosadd(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
             add_score_tuple = ('예시/N', 0, 0)
             # PAIR: cos(a - b, x - y)
-            pair_score_tuple = _cal_pair(w2v_model, a, b, x_index_list, delta_list, count_threshold=count_threshold)
+            # pair_score_tuple = _cal_pair(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
+            pair_score_tuple = _cal_pair_compressed(w2v_model, a, b, x_index_list, delta_list, count_threshold=count_threshold)
 
             return mul_score_tuple, add_score_tuple, pair_score_tuple
 
