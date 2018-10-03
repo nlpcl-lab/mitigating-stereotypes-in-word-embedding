@@ -419,7 +419,7 @@ class EmbeddingTester(object):
                                                                            count))
             return y, y_score, count
 
-        def calculate_cosine_scores(w2v_model, a, b, x, write_file):
+        def calculate_cosine_scores(w2v_model, a, b, x):
             """
             Given gender pair (a,b), generate (x,y) pair which satisfies within delta threshold in descending order.
             :param w2v_model:
