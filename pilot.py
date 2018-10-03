@@ -427,23 +427,27 @@ class EmbeddingTester(object):
 
         def _cal_pair_compressed(w2v_model, a, b, x_index_list, count_threshold=1000):
             vocab_size = (len(w2v_model.wv.index2word),)
-            elem1 = w2v_model.wv.syn0norm[x_index_list, :][:, None] - w2v_model.wv.syn0norm
+            x_size = len(x_index_list)
+            elem1 = w2v_model.wv.syn0norm[x_index_list, :][:, None] - w2v_model.wv.syn0norm # memory error
             elem2 = w2v_model[a] - w2v_model[b]
             elem3 = np.linalg.norm(elem1, axis=2)
             elem123 = np.inner(elem1, elem2) / (elem3 * (np.linalg.norm(elem2)))            # y_score matrix
             sort_index = np.argsort(-elem123, axis=1)
-            boolean_delta_of_elem123 = (elem3 <= 1) & (np.array(w2v_model.wv.index2word)[sort_index] !=)
+            boolean_delta_of_elem123 = (elem3 <= 1) & \
+                                       (np.array(w2v_model.wv.index2word)[sort_index] != a) & \
+                                       (np.array(w2v_model.wv.index2word)[sort_index] != a) & \
+                                       (np.array(w2v_model.wv.index2word)[sort_index] !=
+                                        np.tile(x_index_list.reshape(x_size, 1), vocab_size))
 
-            for i, x in enumerate(x_index_list):
-                y_indexes = sort_index[i, :][boolean_delta_of_elem123[i, :]]
-                y_scores = elem123[i, :][boolean_delta_of_elem123[i, :]]
-                count = np.full(np.shape(y_indexes), 0)
+            y_indexes = sort_index[i, :][boolean_delta_of_elem123[i, :]]
+            y_scores = elem123[i, :][boolean_delta_of_elem123[i, :]]
+            counts = np.full(np.shape(y_indexes), 0)
 
-            y, y_score, count = _cal_argmax_y_compressed(w2v_model, vocab_size, sort_index, elem123, count_threshold)
+            #y, y_score, count = _cal_argmax_y_compressed(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
             #print('PAIR_COMP a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
             #                                                               count))
-            return list(zip(y, y_score, count))
+            return list(zip(np.array(w2v_model.wv.index2word)[y_indexes], y_scores, counts))
 
         def calculate_cosine_scores(w2v_model, a, b, x):
             """
