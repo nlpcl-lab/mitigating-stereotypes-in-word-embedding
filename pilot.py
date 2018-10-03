@@ -349,7 +349,7 @@ class EmbeddingTester(object):
             count = 0  # the number of search trial with delta threshold
             for i in range(vocab_size[0]):
                 y = w2v_model.wv.index2word[sort_index[i]]
-                if x == y or a == x or b == y or a == y or y not in self.gender_removed_vocab:
+                if x == y or a == x or b == y or a == y: #or y not in self.gender_removed_vocab:
                     continue
                 elif not delta_threshold(x, y) and count < count_threshold:
                     count += 1
@@ -397,8 +397,8 @@ class EmbeddingTester(object):
             sort_index = np.argsort(-elem123)
             y, y_score, count = _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
-            print('COSMUL a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
-                                                                             count))
+            #print('COSMUL a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
+            #                                                                 count))
             return y, y_score, count
 
         def _cal_cosadd(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=1000):
@@ -407,8 +407,8 @@ class EmbeddingTester(object):
             sort_index = np.argsort(-elem123)
             y, y_score, count = _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
-            print('COSADD a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
-                                                                             count))
+            #print('COSADD a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
+            #                                                                 count))
             return y, y_score, count
 
         def _cal_pair(w2v_model, a, b, x, count_threshold=1000):
@@ -477,18 +477,20 @@ class EmbeddingTester(object):
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             analogy_pair_score_dict = {}
-            x_list = list(set(list(self.gender_removed_vocab.keys())[20000:20200]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
+            x_list = list(set(list(self.gender_removed_vocab.keys())[25000:50000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             x_index_list = [self.rep_idx[x] for x in x_list]
             for (a, b) in self.gender_pair_list[:5]:
                 write_file.write('a\tb\tx\tmul\tadd\tpair\n')
-                pair_tuple_list = _cal_pair_compressed(self.w2v_model, a, b, x_index_list, count_threshold=1000)
+                #pair_tuple_list = _cal_pair_compressed(self.w2v_model, a, b, x_index_list, count_threshold=1000)
 
-                for i, (x, pair_tuple) in enumerate(zip(x_list, pair_tuple_list)):
+                #for i, (x, pair_tuple) in enumerate(zip(x_list, pair_tuple_list)):
+                for i, x in enumerate(x_list):
                     if i % int(len(x_list)/100 - 1) == 0:
                         print("{:.1f}% of neutral words have done with <{}, {}>".format(i * 100 / len(x_list), a, b))
 
                     #mul_tuple, add_tuple, pair_tuple = calculate_cosine_scores(self.w2v_model, a, b, x)
                     mul_tuple, add_tuple = calculate_cosine_scores(self.w2v_model, a, b, x)
+                    pair_tuple = ('예시/N', 0, 0)
 
                     # Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
                     
@@ -507,9 +509,11 @@ class EmbeddingTester(object):
                                                                             key=lambda item: -item[1][1][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
                 write_file.write('top 150 list - pair\n')
+                """
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
                                                                             key=lambda item: -item[1][2][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
+                """
 
         return 0
 
