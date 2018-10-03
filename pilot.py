@@ -363,6 +363,25 @@ class EmbeddingTester(object):
 
             return y, y_score, count
 
+        def _cal_argmax_y_compressed(w2v_model, vocab_size, sort_index, elem123, count_threshold):
+            y, y_score = '', 0
+            count = 0  # the number of search trial with delta threshold
+            for i in range(vocab_size[0]):
+                y = w2v_model.wv.index2word[sort_index[i]]
+                if x == y or a == x or b == y or a == y or y not in self.gender_removed_vocab:
+                    continue
+                elif not delta_threshold(x, y) and count < count_threshold:
+                    count += 1
+                    continue
+                elif not delta_threshold(x, y) and count >= count_threshold:
+                    y_score = 0
+                    break
+                else:
+                    y_score = elem123[sort_index[i]]
+                    break
+
+            return y, y_score, count
+
         def _cal_cosmul(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=1000):
             """
             :return:
@@ -410,9 +429,9 @@ class EmbeddingTester(object):
             vocab_size = (len(w2v_model.wv.index2word),)
             elem1 = w2v_model.wv.syn0norm[x_index_list, :][:, None] - w2v_model.wv.syn0norm
             elem2 = w2v_model[a] - w2v_model[b]
-            elem3 = np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=2)
+            elem3 = np.linalg.norm(elem1, axis=2)
             elem123 = np.inner(elem1, elem2) / (elem3 * (np.linalg.norm(elem2)))
-            sort_index = np.argsort(-elem123)
+            sort_index = np.argsort(-elem123, axis=1)
             y, y_score, count = _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
             #print('PAIR_COMP a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
@@ -452,7 +471,6 @@ class EmbeddingTester(object):
             x_index_list = [self.rep_idx[x] for x in x_list]
             for (a, b) in self.gender_pair_list[:5]:
                 write_file.write('a\tb\tx\tmul\tadd\tpair\n')
-                #mul_tuple, add_tuple, pair_tuple = calculate_cosine_scores(self.w2v_model, a, b, x_index_list, write_file)
 
                 for i, x in enumerate(x_list):
                     if i % int(len(x_list)/100 - 1) == 0:
@@ -476,12 +494,10 @@ class EmbeddingTester(object):
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
                                                                             key=lambda item: -item[1][1][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
-                """
                 write_file.write('top 150 list - pair\n')
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
                                                                             key=lambda item: -item[1][2][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
-                """
 
         return 0
 
