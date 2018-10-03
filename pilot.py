@@ -442,8 +442,9 @@ class EmbeddingTester(object):
             # PAIR: cos(a - b, x - y)
             # pair_score_tuple = _cal_pair(w2v_model, a, b, x, delta_list, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
             # pair_score_tuple = _cal_pair_compressed(w2v_model, a, b, x_index_list, delta_list, count_threshold=count_threshold)
+            pair_score_tuple = ('예시/N', 0, 0)
 
-            return mul_score_tuple, add_score_tuple#, pair_score_tuple
+            return mul_score_tuple, add_score_tuple, pair_score_tuple
 
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
