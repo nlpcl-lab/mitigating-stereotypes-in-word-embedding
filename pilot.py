@@ -432,18 +432,18 @@ class EmbeddingTester(object):
             elem3 = np.linalg.norm(elem1, axis=2)
             elem123 = np.inner(elem1, elem2) / (elem3 * (np.linalg.norm(elem2)))            # y_score matrix
             sort_index = np.argsort(-elem123, axis=1)
+            boolean_delta_of_elem123 = (elem3 <= 1) & (np.array(w2v_model.wv.index2word)[sort_index] !=)
 
             for i, x in enumerate(x_index_list):
-                boolean_delta_of_elem123 = (elem3 <= 1) & (np.array(w2v_model.wv.index2word)[sort_index[i, :]] != )
-                y_indexes = sort_index[i, :][boolean_delta_of_elem123]
-                y_scores = elem123[i, :][boolean_delta_of_elem123]
-                count = 0
+                y_indexes = sort_index[i, :][boolean_delta_of_elem123[i, :]]
+                y_scores = elem123[i, :][boolean_delta_of_elem123[i, :]]
+                count = np.full(np.shape(y_indexes), 0)
 
             y, y_score, count = _cal_argmax_y_compressed(w2v_model, vocab_size, sort_index, elem123, count_threshold)
 
             #print('PAIR_COMP a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score, delta_threshold(x, y),
             #                                                               count))
-            return y, y_score, count
+            return list(zip(y, y_score, count))
 
         def calculate_cosine_scores(w2v_model, a, b, x):
             """
