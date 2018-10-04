@@ -341,8 +341,8 @@ class EmbeddingTester(object):
         """
         S(x,y) = three methods if x-y< = 1 else 0
         """
-        def delta_threshold(word1, word2):
-            return True if np.linalg.norm(self.w2v_model[word1] - self.w2v_model[word2]) <= DELTA_THRESHOLD else False
+        def delta_threshold(x, y):
+            return True if np.linalg.norm(self.w2v_model[x] - self.w2v_model[y]) <= DELTA_THRESHOLD else False
 
         def _cal_argmax_y(w2v_model, vocab_size, sort_index, elem123, count_threshold):
             y, y_score = '', 0
@@ -350,25 +350,6 @@ class EmbeddingTester(object):
             for i in range(vocab_size[0]):
                 y = w2v_model.wv.index2word[sort_index[i]]
                 if x == y or a == x or b == y or a == y: #or y not in self.gender_removed_vocab:
-                    continue
-                elif not delta_threshold(x, y) and count < count_threshold:
-                    count += 1
-                    continue
-                elif not delta_threshold(x, y) and count >= count_threshold:
-                    y_score = 0
-                    break
-                else:
-                    y_score = elem123[sort_index[i]]
-                    break
-
-            return y, y_score, count
-
-        def _cal_argmax_y_compressed(w2v_model, vocab_size, sort_index, elem123, count_threshold):
-            y, y_score = '', 0
-            count = 0  # the number of search trial with delta threshold
-            for i in range(vocab_size[0]):
-                y = w2v_model.wv.index2word[sort_index[i]]
-                if x == y or a == x or b == y or a == y or y not in self.gender_removed_vocab:
                     continue
                 elif not delta_threshold(x, y) and count < count_threshold:
                     count += 1
