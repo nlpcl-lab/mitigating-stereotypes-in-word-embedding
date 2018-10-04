@@ -4,7 +4,7 @@
 # e.g. '화나/A' in both a positive vocab and a negative vocab.
 # w2v_model.wv.syn0norm is setting after most_similar() used or init_sims() used
 # a = re.findall('\([^)]*\)',s) => ['(1,2,3,4,5)', '(5,4,3,2,1)']
-
+# condition1 추가: 남, 녀는 동음이의어로 다른 뜻으로 쓰이게되는 경우 있어서 제외
 
 import json, codecs, time, re, os
 import config
@@ -480,6 +480,8 @@ class EmbeddingTester(object):
             x_list = list(set(list(self.gender_removed_vocab.keys())[25000:50000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             x_index_list = [self.rep_idx[x] for x in x_list]
             for (a, b) in self.gender_pair_list[:5]:
+                if a == '남/N':
+                    continue
                 write_file.write('a\tb\tx\tmul\tadd\tpair\n')
                 #pair_tuple_list = _cal_pair_compressed(self.w2v_model, a, b, x_index_list, count_threshold=1000)
 
@@ -508,8 +510,8 @@ class EmbeddingTester(object):
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
                                                                             key=lambda item: -item[1][1][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
-                write_file.write('top 150 list - pair\n')
                 """
+                write_file.write('top 150 list - pair\n')
                 for (a, b, x), (mul_tuple, add_tuple, pair_tuple) in sorted(analogy_pair_score_dict.items(),
                                                                             key=lambda item: -item[1][2][1])[:150]:
                     write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
