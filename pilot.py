@@ -434,7 +434,7 @@ class EmbeddingTester(object):
 
             return list(zip(np.array(w2v_model.wv.index2word)[y_indexes], y_scores, counts))
 
-        def calculate_cosine_scores(w2v_model, a, b, x):
+        def calculate_cosine_scores(w2v_model, a, b, x, cos_ya, cos_yb, cos_yx):
             """
             Given gender pair (a,b), generate (x,y) pair which satisfies within delta threshold in descending order.
             :param w2v_model:
@@ -443,10 +443,7 @@ class EmbeddingTester(object):
             :return:
             """
             count_threshold = 1000
-            cos_yb = np.dot(w2v_model.wv.syn0norm, w2v_model[b])
-            cos_yx = np.dot(w2v_model.wv.syn0norm, w2v_model[x])
-            cos_ya = np.dot(w2v_model.wv.syn0norm, w2v_model[a])
-            elem3 = np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=1)
+            delta_list = np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=1)
 
             # 3COSMUL: (1 + cos_yb)(1 + cos_yx)) / (1 + cos_ya + GAMMA)
             mul_score_tuple = _cal_cosmul(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
@@ -465,10 +462,13 @@ class EmbeddingTester(object):
             analogy_pair_score_dict = {}
             x_list = list(set(list(self.gender_removed_vocab.keys())[25000:50000]) - set(self.gender_vocab['0'] + self.gender_vocab['1']))
             x_index_list = [self.rep_idx[x] for x in x_list]
+            cos_yx_list = np.einsum('jk,ik->ij', self.w2v_model.wv.syn0norm, self.w2v_model.wv.syn0norm[x_index_list])
             for (a, b) in self.gender_pair_list[:5]:
                 if a == '남/N':
                     continue
                 write_file.write('a\tb\tx\tmul\tadd\tpair\n')
+                cos_ya = np.dot(self.w2v_model.wv.syn0norm, self.w2v_model[a])
+                cos_yb = np.dot(self.w2v_model.wv.syn0norm, self.w2v_model[b])
                 #pair_tuple_list = _cal_pair_compressed(self.w2v_model, a, b, x_list, x_index_list, count_threshold=1000)
 
                 #for i, (x, pair_tuple) in enumerate(zip(x_list, pair_tuple_list)):
@@ -477,7 +477,7 @@ class EmbeddingTester(object):
                         print("{:.1f}% of neutral words have done with <{}, {}>".format(i * 100 / len(x_list), a, b))
 
                     #mul_tuple, add_tuple, pair_tuple = calculate_cosine_scores(self.w2v_model, a, b, x)
-                    mul_tuple, add_tuple = calculate_cosine_scores(self.w2v_model, a, b, x)
+                    mul_tuple, add_tuple = calculate_cosine_scores(self.w2v_model, a, b, x, cos_ya, cos_yb, cos_yx_list[i])
                     pair_tuple = ('예시/N', 0, 0)
 
                     # Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
@@ -485,7 +485,6 @@ class EmbeddingTester(object):
                     if mul_tuple[2] > 0 or add_tuple[2] > 0 or pair_tuple[2] > 0:
                         analogy_pair_score_dict[(a, b, x)] = (mul_tuple, add_tuple, pair_tuple)
                         write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
-
 
                 # items(): item[a][b][c], a:0 or 1(key or value) b: 0~2 (tuple th) c: 0~2(y, y_score, count)
                 write_file.write('top 150 list - mul\n')
