@@ -367,7 +367,7 @@ class EmbeddingTester(object):
 
             return y, y_score, count
 
-        def _cal_cosmul(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, delta_list, debug_mode=True):
+        def _cal_cosmul(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, delta_list, debug_mode=False):
             """
             :return:
             y = the word
@@ -375,9 +375,10 @@ class EmbeddingTester(object):
             count: the number of search trial with delta threshold
             """
             vocab_size = np.shape(cos_yb)
-            elem1 = np.add(np.full(vocab_size, 1), cos_yb)
-            elem2 = np.add(np.full(vocab_size, 1), cos_yx)
-            elem3 = np.add(np.full(vocab_size, 1 + GAMMA), cos_ya)
+            one_vector = np.full(vocab_size, 1)
+            elem1 = np.add(one_vector, cos_yb)
+            elem2 = np.add(one_vector, cos_yx)
+            elem3 = np.add(one_vector + GAMMA, cos_ya)
             elem123 = np.true_divide(np.multiply(elem1, elem2), elem3)
             sort_index = np.argsort(-elem123)
 
@@ -387,14 +388,14 @@ class EmbeddingTester(object):
 
             for y, y_score in zip(y_list, y_score_list):
                 if x != y and b != y and a != y and not re.search(r'(/NP|/R|/n)$', y):
+                    if debug_mode:
+                        print('COSMUL a b x y y_score {} {} {} {} {} delta {}'.format(a, b, x, y, y_score,
+                                                                                      delta_threshold(x, y)))
                     return y, y_score, 0
 
-            if debug_mode:
-                print('COSMUL a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score,
-                                                                                 delta_threshold(x, y)))
             return 'None', 0, 0
 
-        def _cal_cosadd(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, delta_list, debug_mode=True):
+        def _cal_cosadd(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, delta_list, debug_mode=False):
             vocab_size = np.shape(cos_yb)
             elem123 = np.add(cos_yb, cos_yx) - cos_ya
             sort_index = np.argsort(-elem123)
@@ -405,11 +406,11 @@ class EmbeddingTester(object):
 
             for y, y_score in zip(y_list, y_score_list):
                 if x != y and b != y and a != y and not re.search(r'(/NP|/R|/n)$', y):
+                    if debug_mode:
+                        print('COSADD a b x y y_score {} {} {} {} {} delta {}'.format(a, b, x, y, y_score,
+                                                                                      delta_threshold(x, y)))
                     return y, y_score, 0
 
-            if debug_mode:
-                print('COSADD a b x y y_score {} {} {} {} {} delta {} {}'.format(a, b, x, y, y_score,
-                                                                                 delta_threshold(x, y)))
             return 'None', 0, 0
 
         def _cal_cosadd_old(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, delta_list, count_threshold=1000):
@@ -436,7 +437,7 @@ class EmbeddingTester(object):
                                                                            count))
             return y, y_score, count
 
-        def _cal_pair_compressed(w2v_model, a, b, x_list, x_index_list, count_threshold=1000):
+        def _cal_pair_compressed(w2v_model, a, b, x_list, x_index_list):
             vocab_size = (len(w2v_model.wv.index2word),)
             x_size = len(x_index_list)
             elem1 = w2v_model.wv.syn0norm[x_index_list, :][:, None] - w2v_model.wv.syn0norm # memory error
@@ -473,7 +474,6 @@ class EmbeddingTester(object):
             :param woman_word:
             :return:
             """
-            count_threshold = 1000
             delta_list = np.linalg.norm(w2v_model[x] - w2v_model.wv.syn0norm, axis=1)
 
             # 3COSMUL: (1 + cos_yb)(1 + cos_yx)) / (1 + cos_ya + GAMMA)
@@ -483,7 +483,7 @@ class EmbeddingTester(object):
             add_score_tuple = _cal_cosadd(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, delta_list)
             #add_score_tuple = ('예시/N', 0, 0)
             # PAIR: cos(a - b, x - y)
-            # pair_score_tuple = _cal_pair(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya, count_threshold=count_threshold)
+            # pair_score_tuple = _cal_pair(w2v_model, a, b, x, cos_yb, cos_yx, cos_ya)
             #pair_score_tuple = ('예시/N', 0, 0)
 
             return mul_score_tuple, add_score_tuple#, pair_score_tuple
