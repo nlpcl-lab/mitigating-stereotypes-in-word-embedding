@@ -491,7 +491,7 @@ class EmbeddingTester(object):
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             analogy_pair_score_dict = {}
-            x_list = list(set(list(self.gender_removed_vocab.keys())[:40000])) #- set(self.gender_vocab['0'] + self.gender_vocab['1']))
+            x_list = list(set(list(self.gender_removed_vocab.keys())[20000:20200])) #- set(self.gender_vocab['0'] + self.gender_vocab['1']))
             x_index_list = [self.rep_idx[x] for x in x_list]
             #cos_yx_list = np.einsum('jk,ik->ij', self.w2v_model.wv.syn0norm, self.w2v_model.wv.syn0norm[x_index_list])
             # memory caution
@@ -515,7 +515,7 @@ class EmbeddingTester(object):
 
                     # Given x, if delta_threshold > 1 for all words, y cannot be maken and y_score is 0. 
                     
-                    if mul_tuple[2] > 0 or add_tuple[2] > 0 or pair_tuple[2] > 0:
+                    if mul_tuple[1] > 0 or add_tuple[1] > 0 or pair_tuple[1] > 0:
                         analogy_pair_score_dict[(a, b, x)] = (mul_tuple, add_tuple, pair_tuple)
                         write_file.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(a, b, x, mul_tuple, add_tuple, pair_tuple))
 
