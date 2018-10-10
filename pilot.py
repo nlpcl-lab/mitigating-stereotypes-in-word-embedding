@@ -11,6 +11,7 @@ import config
 import gensim
 import math
 import numpy as np
+import sentgen_we
 from gensim import utils, matutils
 from gensim.models import word2vec, FastText
 from collections import OrderedDict
@@ -104,10 +105,11 @@ class EmbeddingTester(object):
                                                        r'아비|아범|어멈|게이|레즈)', word))}
         """
         gender_removed_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
-                                if not (re.search(r'(/NP|/R|/n)$', word))}
+                                if not (word in self.gender_vocab['0'] + self.gender_vocab['1']) or
+                                not (re.search(r'(/NP|/R|/n)$', word))}
         self.gender_removed_vocab = OrderedDict(sorted(gender_removed_vocab.items(), key=lambda item: -item[1].count))
-        self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=4)
-        self.rep_idx = {word: i for i, word in enumerate(self.w2v_model.wv.index2word)}
+        self.gender_neutral_vocab = self.collect_gender_neutral_vocab(setting=1)
+        #self.rep_idx = {word: i for i, word in enumerate(self.w2v_model.wv.index2word)}
 
     def _remove_oov(self, input_list):
         """
@@ -491,11 +493,11 @@ class EmbeddingTester(object):
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_analogy_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             analogy_pair_score_dict = {}
-            x_list = list(set(list(self.gender_removed_vocab.keys())[20000:20200])) #- set(self.gender_vocab['0'] + self.gender_vocab['1']))
-            x_index_list = [self.rep_idx[x] for x in x_list]
+            # x_list = list(set(list(self.gender_removed_vocab.keys())[20000:20200]))
+            x_list = list(self.gender_neutral_vocab.keys())[1000:2000]
             #cos_yx_list = np.einsum('jk,ik->ij', self.w2v_model.wv.syn0norm, self.w2v_model.wv.syn0norm[x_index_list])
             # memory caution
-            for (a, b) in self.gender_pair_list[:5]:
+            for (a, b) in self.gender_pair_list:
                 if a == '남/N':
                     continue
                 write_file.write('a\tb\tx\tmul\tadd\tpair\n')
@@ -541,8 +543,12 @@ class EmbeddingTester(object):
         with codecs.open(COLLECTED_DATASET_DIR + 'gender_neutral_{0}.txt'.format(MODEL_NAME), "w", encoding='utf-8',
                          errors='ignore') as write_file:
             gender_neutral_vocab = OrderedDict()
+            w2v_vocab = {word: vocab_obj for word, vocab_obj in self.w2v_model.wv.vocab.items()
+                         if word not in self.gender_vocab['0'] + self.gender_vocab['1']}
             for word, vocab_obj in sorted(self.w2v_model.wv.vocab.items(), key=lambda item: -item[1].count):
-                match = re.search(r'(/A|/a|/V)$', word)
+                if vocab_obj.count < 50:
+                    break
+                match = re.search(r'(/A|/V)$', word)
                 if match:
                     gender_neutral_vocab[word] = vocab_obj
                     write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
