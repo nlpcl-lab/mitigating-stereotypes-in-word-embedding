@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Creaetor: Huije Lee (https://github.com/huijelee)
 # Emotional_Word_Dictionary_RES_v1.2: 정규표현식 ^[a-zA-Z0-9]+\t[a-zA-Z0-9_]+\t[가-힣]+/[a-zA-Z]+\t 를 통해 오류줄 색인 가능.
 # gender / sentiment / gender_pair words are filtered if it is oov, duplicated word, or words in both groups.
 # e.g. '화나/A' in both a positive vocab and a negative vocab.
