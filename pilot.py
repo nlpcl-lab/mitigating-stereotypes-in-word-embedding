@@ -19,10 +19,10 @@ from collections import OrderedDict
 from konlpy.tag import Twitter; t = Twitter()
 
 
-COLLECTED_FNAME = config.COLLECTED_FNAME_TWITTER
+COLLECTED_FNAME = config.COLLECTED_FNAME_NEWS
 COLLECTED_DATASET_DIR = 'source\\'
-MODEL_NAME = 'twitter_all'
-# MODEL_NAME = 'news2018'
+# MODEL_NAME = 'twitter_all'
+MODEL_NAME = 'news2018'
 DELTA_THRESHOLD = 1
 GAMMA = 0.001   # Linguistic Regularities in Sparse and Explicit Word Representations
 L_CUTOFF = 5 / 100
@@ -75,7 +75,7 @@ class EmbeddingTester(object):
         self.fasttext_fname = config.MODEL_DIR + 'fasttext_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
         self.w2v_model = self.load_w2v_model(self.w2v_fname)
         self.w2v_model.init_sims()                          # for using wv.syn0norm
-        # self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
+        self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
 
         # For in-out computation
         self.outv = gensim.models.KeyedVectors(vector_size=300)
@@ -761,15 +761,15 @@ class EmbeddingTester(object):
 
     # ### bias calculation zone end ### #
 
-    def pliot_similarity_test(self):
+    def pilot_similarity_test(self):
         """
         Test for similarity
         :return:
         """
         word1 = '남자/N'
         word2 = '여자/N'
-        neu1 = '피의자/N'
-        neu2 = '행복/N'
+        neu1 = '교수/N'
+        neu2 = '사장/N'
         print(neu1, self.w2v_model.similarity(word1, neu1), self.w2v_model.similarity(word2, neu1))
         print(neu2, self.w2v_model.similarity(word1, neu2), self.w2v_model.similarity(word2, neu2))
         print(word1, self.w2v_model.most_similar(word1))
@@ -791,8 +791,8 @@ class EmbeddingTester(object):
         print('---------------------------------------------------')
         word1 = '남자/N'
         word2 = '여자/N'
-        neu1 = '게임/N'
-        neu2 = '화장품/N'
+        neu1 = '축구/N'
+        neu2 = '상냥한/A'
         print(neu1, self.w2v_model.similarity(word1, neu1), self.w2v_model.similarity(word2, neu1))
         print(neu2, self.w2v_model.similarity(word1, neu2), self.w2v_model.similarity(word2, neu2))
         print(word1, self.w2v_model.most_similar(word1))
@@ -834,6 +834,6 @@ if __name__ == '__main__':
     et = EmbeddingTester(is_selected_gender_vocab=True, remove_oov=True)
     # et.sent_bias_test()
     # et.gender_bias_test()
-    et.make_test_analogy()
-    # et.prior_similarity_test()
+    # et.make_test_analogy()
+    et.pilot_similarity_test()
 
