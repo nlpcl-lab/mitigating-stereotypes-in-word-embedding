@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-'
 # Creaetor: Huije Lee (https://github.com/huijelee)
+# WikiCorpus (2018-10-24 enwiki): 58,860,232 lxml etree elements, 5,739,304 articles
+
 import pickle as pkl
 import glob
 import codecs
@@ -23,8 +25,10 @@ if MORPHEME:
 else:
     COLLECTED_FNAME_NEWS = 'source\\articles_2018_no_morph.txt'
     COLLECTED_FNAME_TWITTER = 'source\\twitter_all_no_morph.txt'
-    COLLECTED_FNAME_WIKI = 'D:/dataset/wiki/en.txt'
+    COLLECTED_FNAME_WIKI = 'D:\\dataset\\wiki\\en.txt'
 
+WIKI_DIR = 'D:/dataset/wiki/text_en/'
+MINIMUM_WINDOW_SIZE = 11
 start_time = time.time()
 
 
@@ -166,6 +170,52 @@ class TwitterCorpus(object):
                     yield sentence[:max_sentence_length]
                     sentence = sentence[max_sentence_length:]
 
+
+class WikiCorpus(object):
+    def __init__(self):
+        #self.fnames = glob.glob(WIKI_DIR + '*/wiki_*')
+        self.fnames = glob.glob(WIKI_DIR + 'AA/wiki_0*')
+        self.doc_count = 0
+        self.line_count = 0
+        self.token_count = 0
+
+    def __iter__(self):
+        sentence, rest, max_sentence_length = [], '', 1000
+        for fname in self.fnames:
+            with codecs.open(fname, "r", encoding="utf-8", errors='ignore') as fin:
+                docs = re.split('<.+>', fin.read())
+                docs = [doc.strip() for doc in docs if len(doc.strip()) > 1]
+                # self.doc_count += len(docs)
+                for doc in docs:
+                    lines = re.split('[\r\n]+', doc)
+                    # self.line_count += len(lines)
+                    for line in lines:
+                        """
+                        # something about handling very long line
+                        elif len(line) > 8192:
+                            while True:
+                                text = rest + fin.read(8192)  # avoid loading the entire file (=1 line) into RAM
+                                if text == rest:  # EOF
+                                    sentence.extend(rest.split())  # return the last chunk of words, too (may be shorter/longer)
+                                    if sentence:
+                                        yield sentence
+                                    break
+                                # the last token may have been split in two... keep it for the next iteration
+                                last_token = text.rfind(' ')
+                                words, rest = (text[:last_token].split(), text[last_token:].strip()) if last_token >= 0 else \
+                                    ([], text)
+                                sentence.extend(words)
+                                while len(sentence) >= max_sentence_length:
+                                    yield sentence[:max_sentence_length]
+                                    sentence = sentence[max_sentence_length:]
+                        """
+                        result = [token for token in re.split('\W', line) if token]
+                        # self.token_count += len(result)
+                        if len(result) > MINIMUM_WINDOW_SIZE:
+                            yield [token for token in re.split('\W', line) if token]
+
+    def __str__(self):
+        return "WikiCorpus(doc=%d, line=%d, token=%d)" % (self.doc_count, self.line_count, self.token_count)
 
 class CorpusCollector(object):
     def __init__(self, save_name, corpus='twitter', encoding='utf-8', progress=1000, min_count=5, analyze_mode=True, debug_mode=False):
