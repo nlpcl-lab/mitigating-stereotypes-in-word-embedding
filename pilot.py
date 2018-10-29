@@ -20,9 +20,10 @@ from konlpy.tag import Twitter; t = Twitter()
 
 
 COLLECTED_FNAME = config.COLLECTED_FNAME_NEWS
-COLLECTED_DATASET_DIR = 'source\\'
+COLLECTED_DATASET_DIR = 'D:\\dataset\\PycharmProjects_D\\Bias\\source\\'
 # MODEL_NAME = 'twitter_all'
-MODEL_NAME = 'news2018'
+# MODEL_NAME = 'news2018'
+MODEL_NAME = 'wiki'
 DELTA_THRESHOLD = 1
 GAMMA = 0.001   # Linguistic Regularities in Sparse and Explicit Word Representations
 L_CUTOFF = 5 / 100
@@ -71,8 +72,8 @@ class EmbeddingTester(object):
         :param remove_oov: remove words not in w2v.model vocab.
         """
         # embedding models
-        self.w2v_fname = config.MODEL_DIR + 'w2v_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
-        self.fasttext_fname = config.MODEL_DIR + 'fasttext_{0}_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
+        self.w2v_fname = config.MODEL_DIR + 'w2v_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
+        self.fasttext_fname = config.MODEL_DIR + 'fasttext_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
         self.w2v_model = self.load_w2v_model(self.w2v_fname)
         self.w2v_model.init_sims()                          # for using wv.syn0norm
         self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
@@ -158,9 +159,9 @@ class EmbeddingTester(object):
 
         except IOError:
             print('No existed model. Training W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
-            texts_ko = config.NewsCorpus(COLLECTED_FNAME)
-            w2v_model = word2vec.Word2Vec(texts_ko, workers=4, hs=0, sg=1, size=300, window=5, min_count=5,
-                                          sample=10 ^ -5, negative=10, alpha=0.025, min_alpha=0.0001, seed=1, iter=10)
+            texts = config.NewsCorpus(COLLECTED_FNAME)
+            w2v_model = word2vec.Word2Vec(texts, workers=4, size=300, window=5, min_count=5,
+                                          sample=10^-4, negative=5, alpha=0.025, min_alpha=0.0001, seed=1, iter=2)
             # init_sims: reduce memory but cannot continue training (because original vectors are removed.
             w2v_model.init_sims(replace=True)
 
@@ -335,10 +336,10 @@ class EmbeddingTester(object):
             print(fasttext_model)
         except IOError:
             print('No existed model. Training Fasttext Model... in {0:.2f} seconds'.format(time.time() - start_time))
-            texts_ko = config.NewsCorpus(COLLECTED_FNAME)
-            fasttext_model = FastText(texts_ko, workers=4, hs=0, sg=1, size=300, window=5, min_count=5,
-                                 sample=10 ^ -5, negative=10, alpha=0.025, min_alpha=0.0001, seed=1, iter=10,
-                                 min_n=2, max_n=3)
+            texts = config.NewsCorpus(COLLECTED_FNAME)
+            fasttext_model = FastText(texts, workers=4, size=300, window=5, min_count=5,
+                                 sample=10^-4, negative=5, alpha=0.025, min_alpha=0.0001, seed=1, iter=2,
+                                 min_n=3, max_n=6)
             fasttext_model.save(fname)
 
         print('Success to load Fasttext Model... in {0:.2f} seconds'.format(time.time() - start_time))

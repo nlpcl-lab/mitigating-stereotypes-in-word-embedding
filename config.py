@@ -11,7 +11,7 @@ from copy import deepcopy
 from gensim import models
 from konlpy.tag import Twitter; twitter = Twitter()
 
-MORPHEME = True
+MORPHEME = False
 
 if MORPHEME:
     MODEL_DIR = 'model_gensim\\'
@@ -23,6 +23,7 @@ if MORPHEME:
 else:
     COLLECTED_FNAME_NEWS = 'source\\articles_2018_no_morph.txt'
     COLLECTED_FNAME_TWITTER = 'source\\twitter_all_no_morph.txt'
+    COLLECTED_FNAME_WIKI = 'D:/dataset/wiki/en.txt'
 
 start_time = time.time()
 
