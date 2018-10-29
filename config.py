@@ -173,8 +173,8 @@ class TwitterCorpus(object):
 
 class WikiCorpus(object):
     def __init__(self):
-        #self.fnames = glob.glob(WIKI_DIR + '*/wiki_*')
-        self.fnames = glob.glob(WIKI_DIR + 'AA/wiki_0*')
+        self.fnames = glob.glob(WIKI_DIR + '*/wiki_*')
+        # self.fnames = glob.glob(WIKI_DIR + 'AA/wiki_0*')
         self.doc_count = 0
         self.line_count = 0
         self.token_count = 0
