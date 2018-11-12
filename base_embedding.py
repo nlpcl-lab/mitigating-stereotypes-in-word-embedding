@@ -365,6 +365,8 @@ class MyModel(object):
         print('Success to load My Model... in {0:.2f} seconds'.format(time.time() - start_time))
         return my_model
 
+    def _modulate_vector_linalg(self, dim=1, dim2=1):
+        self.my_model.syn0[:, :dim + dim2] = self.my_model.syn0[:, :dim + dim2] / self.init_modulate
 
 
 
