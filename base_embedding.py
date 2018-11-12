@@ -26,20 +26,65 @@ DEFAULT_ARGUMENTS_FT = dict(**DEFAULT_ARGUMENTS_W2V, min_n=3, max_n=6)
 
 start_time = time.time()
 
-def print_result(clf, X_male, y_male, normalize=True):
-    pred = clf.predict(X_male)
-    acc, auc, pre, rec = accuracy_score(y_male, pred), roc_auc_score(y_male, pred), \
-                         precision_score(y_male, pred, average=None), recall_score(y_male, pred, average=None)
-    cnf_matrix = confusion_matrix(y_male, pred)
-    print(acc, auc, pre, rec)
-    print(cnf_matrix)
-    if normalize:
-        cnf_matrix = cnf_matrix.astype('float') / cnf_matrix.sum(axis=1)[:, np.newaxis]
-        print(cnf_matrix)
-        fpr = cnf_matrix[0, 1]
-        fnr = cnf_matrix[1, 0]
+def load_UCI():
+    X_train, y_train, X_test, y_test = [], [], [], []
+    with codecs.open(DATASET_DIR + 'UCI_adult_dataset.txt', 'r', encoding='utf-8', errors='ignore') as f:
+        for i, line in enumerate(re.split('[\r\n]+', f.read())):
+            line = re.sub(r' ', '', line)
+            tokens = re.split(r',', line)
+            if len(tokens) == 15:
+                X_train.append(tokens[:-1])
+                y_train.append(tokens[-1])
+    with codecs.open(DATASET_DIR + 'UCI_adult_test.txt', 'r', encoding='utf-8', errors='ignore') as f:
+        for i, line in enumerate(re.split('[\r\n]+', f.read())):
+            if i == 0:
+                continue
+            line = re.sub(r' ', '', line)
+            tokens = re.split(r',', line)
+            if len(tokens) == 15:
+                X_test.append(tokens[:-1])
+                y_test.append(tokens[-1])
 
-    return fpr, fnr
+    return (X_train, y_train), (X_test, y_test)
+
+
+def word2rep(_X_train, _y_train, model):
+    X_train, y_train = [], []
+
+    for X, y in zip(_X_train, _y_train):
+        tmp_X = np.array([])
+        for token in X:
+            if not re.search(r'[a-zA-Z\-?]+', token):
+                tmp_X = np.append(tmp_X, np.array([float(token)/10000]))
+                tmp_X = np.append(tmp_X, np.zeros(np.shape(model.syn0[1])[0] - 1))
+                #continue
+            elif token in model.vocab:
+                tmp_X = np.append(tmp_X, model[token])
+            # compound with '-': only select first vocab without oov for regulating sizes of all X
+            elif re.search(r'-', token):
+                add_tokens = re.split(r'-', token)
+                i = 1
+                for add_token in add_tokens:
+                    if add_token in model.vocab:
+                        tmp_X = np.append(tmp_X, model[add_token])
+                        i = 0
+                        break
+                    else:
+                        continue
+                if i:
+                    tmp_X = np.append(tmp_X, np.zeros(np.shape(model.syn0[1]), dtype=float))
+
+            else:
+                tmp_X = np.append(tmp_X, np.zeros(np.shape(model.syn0[1]), dtype=float))
+
+        if np.shape(tmp_X)[0] > 0:
+            X_train.append(tmp_X)
+            if re.search(r'>', y):
+                y_train.append(1)
+            else:
+                y_train.append(0)
+
+    return X_train, y_train
 
 
 class Vocab(object):
