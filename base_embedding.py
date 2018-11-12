@@ -210,6 +210,9 @@ class W2vModel(object):
         except Exception as e:
             similarities = self.w2v_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
 
+    def test_analogy(self):
+        for word in neutral_word_list:
+            print(self.w2v_model.most_similar(positive=['woman', word], negative=['man'], topn=10))
 
 
 class FtModel(object):
@@ -255,5 +258,4 @@ class FtModel(object):
         self.ft_model.wv.accuracy(DATASET_DIR + 'questions-words.txt')
         similarities = self.ft_model.wv.evaluate_word_pairs(datapath('wordsim353.tsv'))
         # print(similarities)
-
 
