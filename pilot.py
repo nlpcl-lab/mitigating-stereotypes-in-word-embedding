@@ -20,9 +20,9 @@ from konlpy.tag import Twitter; t = Twitter()
 
 # Basic constants
 COLLECTED_FNAME = 'D:\\dataset\\wiki\\en.txt'
-COLLECTED_DATASET_DIR = 'D:\\PycharmProjects_D\\Bias\\source\\'
-MODEL_NAME = 'wiki'  # MODEL_NAME = 'twitter_all' # MODEL_NAME = 'news2018'
-MODEL_DIR = 'D:\\PycharmProjects_D\\Bias\\'
+COLLECTED_DATASET_DIR= 'C:/Users/JAE4258_NLP/PycharmProjects/Bias/source/'#COLLECTED_DATASET_DIR = 'D:\\PycharmProjects_D\\Bias\\source\\'
+MODEL_NAME='news2018'#MODEL_NAME = 'wiki'  # MODEL_NAME = 'twitter_all' # MODEL_NAME = 'news2018'
+MODEL_DIR='C:/Users/JAE4258_NLP/PycharmProjects/Bias/model_gensim/'# MODEL_DIR = 'D:\\PycharmProjects_D\\Bias\\'
 DEFAULT_ARGUMENTS_W2V = dict(workers=4, sg=1, size=300, window=5, min_count=5, sample=10^-4, negative=5, seed=1, iter=2)
 DEFAULT_ARGUMENTS_FT = dict(**DEFAULT_ARGUMENTS_W2V, min_n=3, max_n=6)
 
@@ -74,11 +74,12 @@ class EmbeddingTester(object):
         :param remove_oov: remove words not in w2v.model vocab.
         """
         # embedding models
-        self.w2v_fname = MODEL_DIR + 'w2v_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
-        self.fasttext_fname = MODEL_DIR + 'fasttext_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
+        self.w2v_fname = MODEL_DIR + 'w2v_news2018_sg_300_hs0_neg10_sampled_it10.model'.format(MODEL_NAME)
+        #self.w2v_fname = MODEL_DIR + 'w2v_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
+        #self.fasttext_fname = MODEL_DIR + 'fasttext_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
         self.w2v_model = self.load_w2v_model(self.w2v_fname)
         self.w2v_model.init_sims()                          # for using wv.syn0norm
-        self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
+        #self.fasttext_model = self.load_fasttext_model(self.fasttext_fname)
 
         # For in-out computation
         self.outv = gensim.models.KeyedVectors(vector_size=300)

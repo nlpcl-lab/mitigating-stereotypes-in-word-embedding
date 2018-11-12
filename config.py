@@ -32,6 +32,10 @@ MINIMUM_WINDOW_SIZE = 11
 start_time = time.time()
 
 
+def whattime():
+    return time.time() - start_time
+
+
 def change_twitter_tag_simpler(tag):
     if tag == "Noun":
         tag = "N"
