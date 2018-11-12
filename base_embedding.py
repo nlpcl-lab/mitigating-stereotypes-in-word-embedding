@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json, codecs, time, re
+import numpy as np
 import logging
 
+from sklearn import svm, metrics
+from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, confusion_matrix
+import config
 
 start_time = time.time()
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -21,6 +25,21 @@ DEFAULT_ARGUMENTS_W2V = dict(workers=4, sg=1, size=300, window=5, min_count=5, s
 DEFAULT_ARGUMENTS_FT = dict(**DEFAULT_ARGUMENTS_W2V, min_n=3, max_n=6)
 
 start_time = time.time()
+
+def print_result(clf, X_male, y_male, normalize=True):
+    pred = clf.predict(X_male)
+    acc, auc, pre, rec = accuracy_score(y_male, pred), roc_auc_score(y_male, pred), \
+                         precision_score(y_male, pred, average=None), recall_score(y_male, pred, average=None)
+    cnf_matrix = confusion_matrix(y_male, pred)
+    print(acc, auc, pre, rec)
+    print(cnf_matrix)
+    if normalize:
+        cnf_matrix = cnf_matrix.astype('float') / cnf_matrix.sum(axis=1)[:, np.newaxis]
+        print(cnf_matrix)
+        fpr = cnf_matrix[0, 1]
+        fnr = cnf_matrix[1, 0]
+
+    return fpr, fnr
 
 
 class Vocab(object):
@@ -42,3 +61,5 @@ class Vocab(object):
     def __str__(self):
         vals = ['%s:%r' % (key, self.__dict__[key]) for key in sorted(self.__dict__) if not key.startswith('_')]
         return "<" + ', '.join(vals) + ">"
+
+
