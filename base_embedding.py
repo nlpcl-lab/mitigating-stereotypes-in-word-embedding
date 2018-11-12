@@ -384,6 +384,14 @@ class MyModel(object):
         # self.my_model.init_sims(replace=True)
         #  it makes syn0 and vectors to be also normalized (same as syn0norm and vectors_norm)
 
+    def modulate_all(self, dim=1, dim2=1, intensity=1):
+        if intensity < 1:
+            assert len(self.space_order) < 3, "please set space_order with type 'list' (e.g. [1, 1])."
+            self.my_model.syn0[:, :dim+dim2] = self.my_model.syn0[:, :dim+dim2] * intensity
+            # self.my_model.init_sims(replace=True)
+            #  it makes syn0 and vectors to be also normalized (same as syn0norm and vectors_norm)
+        self.my_model.syn0norm = (
+                    self.my_model.syn0 / np.sqrt((self.my_model.syn0 ** 2).sum(-1))[..., np.newaxis]).astype(float)
 
 
 
