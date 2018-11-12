@@ -424,5 +424,8 @@ class MyModel(object):
         similarities = self.my_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
         print(similarities)
 
+    def test_analogy(self):
+        for word in neutral_word_list:
+            print(self.my_model.most_similar(positive=['woman', word], negative=['man'], topn=10))
 
 
