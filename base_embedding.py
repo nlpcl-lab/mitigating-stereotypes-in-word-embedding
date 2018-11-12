@@ -419,6 +419,10 @@ class MyModel(object):
         """
 
 
+    def test_intrinsic(self):
+        self.my_model.accuracy(DATASET_DIR + 'questions-words.txt', restrict_vocab=300000)
+        similarities = self.my_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
+        print(similarities)
 
 
 
