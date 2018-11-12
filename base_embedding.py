@@ -217,6 +217,25 @@ class W2vModel(object):
     def save(self):
         self.w2v_model.wv.save_word2vec_format('C:/Users/JAE4258_NLP/PycharmProjects/socialsent-master/socialsent/data/example_embeddings/glove.6B.100d.txt', binary=False)
 
+    def save_vocab(self):
+        """
+        Setting 4: remove noun particle / foreign words / digit and gender_specific suffix / prefix.
+                After that, only remain the data between upper and lower cut off based on frequency.
+        :return:
+        """
+        with codecs.open(DATASET_DIR + '{}_vocabs.txt'.format(MODEL_NAME), "w", encoding='utf-8',
+                         errors='ignore') as write_file:
+            tmp_vocab = OrderedDict()
+            tmp_list = []
+            for word, vocab_obj in sorted(self.w2v_model.wv.vocab.items(), key=lambda item: -item[1].count):
+                if re.search(r'^[a-zA-Z][a-zA-Z0-9]{0,}$', word):
+                    tmp_vocab[word] = vocab_obj
+                    write_file.write('{0}\t{1}\n'.format(word, vocab_obj.count))
+
+            print("Success to save wiki vocabulary.")
+
+        self.w2v_vocab = tmp_vocab
+
 class FtModel(object):
     def __init__(self):
         """
