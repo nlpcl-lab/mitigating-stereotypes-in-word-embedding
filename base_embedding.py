@@ -393,6 +393,30 @@ class MyModel(object):
         self.my_model.syn0norm = (
                     self.my_model.syn0 / np.sqrt((self.my_model.syn0 ** 2).sum(-1))[..., np.newaxis]).astype(float)
 
+    def test(self, uci_dataset, intensity_order=1):
+        for i, intensity in enumerate([1, 10, 10, 10]):
+            #if i == 0:
+            #    continue
+            print("Model with intensity 10^{}, threshold {}".format(i*intensity_order, self.threshold))
+            self.modulate_sentiment(intensity=intensity**intensity_order)
+            self.test_analogy()
+            #self.show_topn_affect()
+            self.test_UCI(uci_dataset, overall_acc=True)
+            self.test_intrinsic()
+
+        self.modulate_sentiment(intensity=0)
+        self.test_analogy()
+        #self.show_topn_affect()
+        self.test_UCI(uci_dataset, overall_acc=True)
+        self.test_intrinsic()
+
+        """
+        self.modulate_all(intensity=0)
+        self.test_analogy()
+        #self.show_topn_affect()
+        self.test_UCI(uci_dataset, overall_acc=True)
+        #self.test_intrinsic()
+        """
 
 
 
