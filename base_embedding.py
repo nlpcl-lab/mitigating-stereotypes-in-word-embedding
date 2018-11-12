@@ -210,6 +210,32 @@ class W2vModel(object):
         except Exception as e:
             similarities = self.w2v_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
 
+    def test_UCI(self, uci_dataset, small_train=False, overall_acc=True):
+        (_X_train, _y_train), (_X_test, _y_test) = uci_dataset
+        (X_train, y_train), (X_test, y_test) = word2rep(_X_train, _y_train, self.w2v_model), word2rep(_X_test, _y_test, self.w2v_model)
+        (X_male, y_male), (X_female, y_female) = divide_dataset_by_gender(X_test, y_test, self.w2v_model)
+
+        assert len(X_train) == len(y_train)
+        assert len(X_test) == len(y_test)
+        print("num of tests / num of labels: {} {} / {} {} in {:.2f} sec".format(
+            len(X_train), len(X_test), len(set(y_train)), len(set(y_test)), time.time() - start_time))
+
+        for c in [1, 10, 100]:
+            clf = svm.SVC(C=c)
+            if small_train:
+                clf.fit(X_train[:10000], y_train[:10000])
+            else:
+                clf.fit(X_train, y_train)
+            if overall_acc:
+                print_result(clf, X_test, y_test)
+
+            male_fpr, male_fnr = print_result(clf, X_male, y_male)
+            female_fpr, female_fnr = print_result(clf, X_female, y_female)
+            print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr/female_fpr, male_fnr/female_fnr))
+            print('-' * 30)
+
+        return 0
+
     def test_analogy(self):
         for word in neutral_word_list:
             print(self.w2v_model.most_similar(positive=['woman', word], negative=['man'], topn=10))
