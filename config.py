@@ -32,9 +32,9 @@ MINIMUM_WINDOW_SIZE = 11
 start_time = time.time()
 
 
+
 def whattime():
     return time.time() - start_time
-
 
 def change_twitter_tag_simpler(tag):
     if tag == "Noun":
@@ -223,7 +223,6 @@ class WikiCorpus(object):
 
     def __str__(self):
         return "WikiCorpus(doc=%d, line=%d, token=%d)" % (self.doc_count, self.line_count, self.token_count)
-
 
 
 class CorpusCollector(object):
@@ -457,11 +456,5 @@ if __name__ == "__main__":
     # cc = CorpusCollector(COLLECTED_FNAME_TWITTER, corpus='twitter', analyze_mode=False, debug_mode=False)
     vc = VocabCounter(COLLECTED_FNAME_NEWS, corpus_type='NEWS')
     vc.count()
-    """
-    # W2vManager uses local word2vec code.
-    # not used because of time complexity
-    """
-    # w2v_manager = W2vManager(mtype='sg', hs=0, neg=10, embed_dim=300, sample=10 ^ -5, alpha=0.025, min_alpha=0.0001,
-    #                         is_gensim=True)
-    # w2v_model = w2v_manager.load_w2v_model(corpus='news', it=10)
+
 

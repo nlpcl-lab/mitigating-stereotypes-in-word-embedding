@@ -64,7 +64,6 @@ def word2rep(_X_train, _y_train, model):
             if not re.search(r'[a-zA-Z\-?]+', token):
                 tmp_X = np.append(tmp_X, np.array([float(token)/10000]))
                 tmp_X = np.append(tmp_X, np.zeros(np.shape(model.syn0[1])[0] - 1))
-                #continue
             elif token in model.vocab:
                 tmp_X = np.append(tmp_X, model[token])
             # compound with '-': only select first vocab without oov for regulating sizes of all X
@@ -232,7 +231,7 @@ class W2vModel(object):
         except Exception as e:
             similarities = self.w2v_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
 
-    def test_UCI(self, uci_dataset, small_train=False, overall_acc=True):
+    def test_UCI(self, uci_dataset, small_train=True, overall_acc=True):
         (_X_train, _y_train), (_X_test, _y_test) = uci_dataset
         (X_train, y_train), (X_test, y_test) = word2rep(_X_train, _y_train, self.w2v_model), word2rep(_X_test, _y_test, self.w2v_model)
         (X_male, y_male), (X_female, y_female) = divide_dataset_by_gender(X_test, y_test, self.w2v_model)
@@ -242,19 +241,18 @@ class W2vModel(object):
         print("num of tests / num of labels: {} {} / {} {} in {:.2f} sec".format(
             len(X_train), len(X_test), len(set(y_train)), len(set(y_test)), time.time() - start_time))
 
-        for c in [1, 10, 100]:
-            clf = svm.SVC(C=c)
-            if small_train:
-                clf.fit(X_train[:10000], y_train[:10000])
-            else:
-                clf.fit(X_train, y_train)
-            if overall_acc:
-                print_result(clf, X_test, y_test)
+        clf = svm.SVC(C=100)
+        if small_train:
+            clf.fit(X_train[:10000], y_train[:10000])
+        else:
+            clf.fit(X_train, y_train)
+        if overall_acc:
+            print_result(clf, X_test, y_test)
 
-            male_fpr, male_fnr = print_result(clf, X_male, y_male)
-            female_fpr, female_fnr = print_result(clf, X_female, y_female)
-            print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr/female_fpr, male_fnr/female_fnr))
-            print('-' * 30)
+        male_fpr, male_fnr = print_result(clf, X_male, y_male)
+        female_fpr, female_fnr = print_result(clf, X_female, y_female)
+        print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr/female_fpr, male_fnr/female_fnr))
+        print('-' * 30)
 
         return 0
 
@@ -394,7 +392,7 @@ class MyModel(object):
                     self.my_model.syn0 / np.sqrt((self.my_model.syn0 ** 2).sum(-1))[..., np.newaxis]).astype(float)
 
     def test(self, uci_dataset, intensity_order=1):
-        for i, intensity in enumerate([1, 10, 10, 10]):
+        for i, intensity in enumerate([1, 10, 10]):
             #if i == 0:
             #    continue
             print("Model with intensity 10^{}, threshold {}".format(i*intensity_order, self.threshold))
@@ -428,7 +426,7 @@ class MyModel(object):
         for word in neutral_word_list:
             print(self.my_model.most_similar(positive=['woman', word], negative=['man'], topn=10))
 
-    def test_UCI(self, uci_dataset, small_train=False, overall_acc=True):
+    def test_UCI(self, uci_dataset, small_train=True, overall_acc=True):
         (_X_train, _y_train), (_X_test, _y_test) = uci_dataset
         (X_train, y_train), (X_test, y_test) = word2rep(_X_train, _y_train, self.my_model), word2rep(_X_test, _y_test,
                                                                                                       self.my_model)
@@ -439,19 +437,18 @@ class MyModel(object):
         print("num of tests / num of labels: {} {} / {} {} in {:.2f} sec".format(
             len(X_train), len(X_test), len(set(y_train)), len(set(y_test)), time.time() - start_time))
 
-        for c in [1, 10, 100]:
-            clf = svm.SVC(C=c)
-            if small_train:
-                clf.fit(X_train[:10000], y_train[:10000])
-            else:
-                clf.fit(X_train, y_train)
-            if overall_acc:
-                print_result(clf, X_test, y_test)
+        clf = svm.SVC(C=100)
+        if small_train:
+            clf.fit(X_train[:10000], y_train[:10000])
+        else:
+            clf.fit(X_train, y_train)
+        if overall_acc:
+            print_result(clf, X_test, y_test)
 
-            male_fpr, male_fnr = print_result(clf, X_male, y_male)
-            female_fpr, female_fnr = print_result(clf, X_female, y_female)
-            print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr / female_fpr, male_fnr / female_fnr))
-            print('-' * 30)
+        male_fpr, male_fnr = print_result(clf, X_male, y_male)
+        female_fpr, female_fnr = print_result(clf, X_female, y_female)
+        print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr / female_fpr, male_fnr / female_fnr))
+        print('-' * 30)
 
         return 0
 
@@ -479,22 +476,19 @@ class MyModel(object):
                 print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
 
 if __name__ == "__main__":
-    #uci_dataset = load_UCI()
-    #w2v = W2vModel(vocab_limit=100000)
-    #w2v.test_analogy()
-    #w2v.test_UCI(uci_dataset, overall_acc=True)
-    #w2v.test()
+    uci_dataset = load_UCI()
+    w2v = W2vModel(vocab_limit=100000)
+    w2v.test_analogy()
+    w2v.test_UCI(uci_dataset, overall_acc=True)
+    w2v.test()
     w2v = {}
 
     # sentiment cutoff: 19.660907745361328 with space_order: -1
     my = MyModel(threshold=44.33755874633789, space_order=[-1, 1])
     my.show_topn_affect()
-    my2 = MyModel(threshold=44.33755874633789, space_order=[-1, 1])
-    my2.modulate_sentiment(intensity=0)
-    my2.show_topn_affect()
-    #my.test(uci_datasset, intensity_order=1)
+    my.test(uci_dataset, intensity_order=1)
 
-    #my = MyModel(threshold=44.33755874633789, space_order=[-1, 1])
-    #my.test(uci_dataset, intensity_order=-1)
+    my = MyModel(threshold=44.33755874633789, space_order=[-1, 1])
+    my.test(uci_dataset, intensity_order=-1)
 
     print("end")
