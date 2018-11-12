@@ -368,6 +368,21 @@ class MyModel(object):
     def _modulate_vector_linalg(self, dim=1, dim2=1):
         self.my_model.syn0[:, :dim + dim2] = self.my_model.syn0[:, :dim + dim2] / self.init_modulate
 
+    def modulate_sentiment(self, dim=1, dim2=1, intensity=1):
+        assert len(self.space_order) < 3, "please set space_order with type 'list' (e.g. [1, 1])."
+        if self.threshold and self.space_order[1] == 1:  # modulate sentiment only for entity words
+            self.my_model.syn0[:, :dim] = np.multiply(self.my_model.syn0[:, :dim],
+                                                      np.where(self.my_model.syn0[:, dim:dim + dim2] >= (self.threshold / self.init_modulate),
+                                                               intensity, 1))
+        elif self.threshold and self.space_order[1] == -1:  # modulate sentiment only for entity words
+            self.my_model.syn0[:, :dim] = np.multiply(self.my_model.syn0[:, :dim],
+                                                      np.where(self.my_model.syn0[:, dim:dim + dim2] <= (self.threshold / self.init_modulate),
+                                                               intensity, 1))
+        else:  # modulate sentiment for entire words
+            self.my_model.syn0[:, :dim] = self.my_model.syn0[:, :dim] * intensity
+        self.my_model.syn0norm = (self.my_model.syn0 / np.sqrt((self.my_model.syn0 ** 2).sum(-1))[..., np.newaxis]).astype(float)
+        # self.my_model.init_sims(replace=True)
+        #  it makes syn0 and vectors to be also normalized (same as syn0norm and vectors_norm)
 
 
 
