@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json, codecs, time, re
+from gensim.models import word2vec, FastText
+from gensim.test.utils import datapath
 import numpy as np
 import logging
 from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, confusion_matrix
@@ -114,4 +116,70 @@ def print_result(clf, X_male, y_male, normalize=True):
         fnr = cnf_matrix[1, 0]
 
     return fpr, fnr
+
+
+class Vocab(object):
+    """
+    A single vocabulary item, used internally e.g. for constructing binary trees
+    (incl. both word leaves and inner nodes).
+    Possible Fields:
+        - count: how often the word occurred in the training sentences
+        - index: the word's index in the embedding
+    """
+
+    def __init__(self, **kwargs):
+        self.count = 0
+        self.__dict__.update(kwargs)
+
+    def __lt__(self, other):  # used for sorting in a priority queue
+        return self.count < other.count
+
+    def __str__(self):
+        vals = ['%s:%r' % (key, self.__dict__[key]) for key in sorted(self.__dict__) if not key.startswith('_')]
+        return "<" + ', '.join(vals) + ">"
+
+
+class FtModel(object):
+    def __init__(self):
+        """
+        :param is_selected_gender_vocab: 'True' means selected_gender_vocab is prepared.
+        :param remove_oov: remove words not in w2v.model vocab.
+        """
+        # embedding models
+        self.ft_fname = MODEL_DIR + 'ft_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
+        self.ft_model = self.load_ft_model(self.ft_fname)
+
+    def load_ft_model(self, fname):
+        """
+        class FastText(sentences=None, sg=0, hs=0, size=100, alpha=0.025, window=5, min_count=5, max_vocab_size=None,
+        word_ngrams=1, sample=0.001, seed=1, workers=3, min_alpha=0.0001, negative=5, cbow_mean=1, hashfxn=hash, iter=5,
+        null_word=0, min_n=3, max_n=6, sorted_vocab=1, bucket=2000000, trim_rule=None, batch_words=MAX_WORDS_IN_BATCH)
+        min_n : int
+            Min length of char ngrams to be used for training word representations.
+        max_n : int
+            Max length of char ngrams to be used for training word representations.
+            Set max_n to be lesser than min_n to avoid char ngrams being used.
+        word_ngrams : int {1,0}
+            If 1, uses enriches word vectors with subword(ngrams) information. If 0, this is equivalent to word2vec.
+        bucket : int
+            Character ngrams are hashed into a fixed number of buckets, in order to limit the memory usage of the model.
+            This option specifies the number of buckets used by the model.
+        """
+        print('Loading Fasttext Model... in {0:.2f} seconds'.format(time.time() - start_time))
+        try:
+            fasttext_model = FastText.load(fname)
+            print(fasttext_model)
+        except IOError:
+            print('No existed model. Training Ft Model... in {0:.2f} seconds'.format(time.time() - start_time))
+            texts = config.WikiCorpus()
+            fasttext_model = FastText(texts, **DEFAULT_ARGUMENTS_FT)
+            fasttext_model.save(fname)
+
+        print('Success to load Fasttext Model... in {0:.2f} seconds'.format(time.time() - start_time))
+        return fasttext_model
+
+    def test(self):
+        self.ft_model.wv.accuracy(DATASET_DIR + 'questions-words.txt')
+        similarities = self.ft_model.wv.evaluate_word_pairs(datapath('wordsim353.tsv'))
+        # print(similarities)
 
