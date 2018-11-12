@@ -125,6 +125,28 @@ def print_result(clf, X_male, y_male, normalize=True):
     return fpr, fnr
 
 
+# means predicted:X, target:y
+def find_optimal_cutoff(predicted, target):
+    """ Find the optimal probability cutoff point for a classification model related to event rate
+    Parameters
+    ----------
+    target : Matrix with dependent or target data, where rows are observations
+
+    predicted : Matrix with predicted data, where rows are observations
+
+    Returns
+    -------
+    list type, with optimal cutoff value
+
+    """
+    fpr, tpr, threshold = metrics.roc_curve(target, predicted)
+    i = np.arange(len(tpr))
+    roc = pd.DataFrame({'tf' : pd.Series(tpr-(1-fpr), index=i), 'threshold': pd.Series(threshold, index=i)})
+    roc_t = roc.ix[(roc.tf-0).abs().argsort()[:1]]
+
+    return list(roc_t['threshold']).pop()
+
+
 class Vocab(object):
     """
     A single vocabulary item, used internally e.g. for constructing binary trees
@@ -305,4 +327,28 @@ class FtModel(object):
         self.ft_model.wv.accuracy(DATASET_DIR + 'questions-words.txt')
         similarities = self.ft_model.wv.evaluate_word_pairs(datapath('wordsim353.tsv'))
         # print(similarities)
+
+
+class MyModel(object):
+    def __init__(self, threshold=None, space_order=[1, 1]):
+        """
+        :param is_selected_gender_vocab: 'True' means selected_gender_vocab is prepared.
+        :param remove_oov: remove words not in w2v.model vocab.
+        """
+        # embedding models
+        self.my_fname = MODEL_DIR + MY_MODEL_NAME + SEED_NUM
+        self.my_model = self.load_w2v_model(self.my_fname)
+        self.init_modulate = np.shape(self.my_model.syn0)[1]
+        self._modulate_vector_linalg(dim=1, dim2=1)
+        self.threshold = threshold
+        self.space_order = space_order
+
+
+
+
+
+
+
+
+
 
