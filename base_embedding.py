@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json, codecs, time, re
+import gensim
+from gensim import utils, matutils
 from gensim.models import word2vec, FastText
 from gensim.test.utils import datapath
+import math
 import numpy as np
+import pandas as pd
+from collections import OrderedDict
 import logging
+
+from sklearn import svm, metrics
 from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, confusion_matrix
 import config
 
@@ -118,6 +125,7 @@ def print_result(clf, X_male, y_male, normalize=True):
     return fpr, fnr
 
 
+
 class Vocab(object):
     """
     A single vocabulary item, used internally e.g. for constructing binary trees
@@ -137,6 +145,55 @@ class Vocab(object):
     def __str__(self):
         vals = ['%s:%r' % (key, self.__dict__[key]) for key in sorted(self.__dict__) if not key.startswith('_')]
         return "<" + ', '.join(vals) + ">"
+
+
+class W2vModel(object):
+    def __init__(self, vocab_limit=None):
+        """
+        :param is_selected_gender_vocab: 'True' means selected_gender_vocab is prepared.
+        :param remove_oov: remove words not in w2v.model vocab.
+        """
+        # embedding models
+        self.w2v_fname = MODEL_DIR + 'w2v_{0}_sg_300_neg5_it2.model'.format(MODEL_NAME)
+        self.w2v_model = self.load_w2v_model_new(self.w2v_fname, vocab_limit)
+        if not vocab_limit:
+            self.w2v_model.init_sims()                          # for using wv.syn0norm
+
+    def load_w2v_model_new(self, fname, vocab_limit):
+        try:
+            print('Loading W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
+            w2v_model = word2vec.Word2Vec.load(fname)
+            if vocab_limit:    # it uses KeyedVector class (Word2vec.wv). Do not point wv.
+                tmp_w2v = gensim.models.KeyedVectors(vector_size=300)
+                tmp_w2v.index2word = w2v_model.wv.index2word[:vocab_limit]
+                tmp_w2v.vocab = {w: w2v_model.wv.vocab[w] for w in tmp_w2v.index2word}
+
+                # check if the order of keyedvector is broken
+                for i, w in enumerate(tmp_w2v.index2word):
+                    if tmp_w2v.vocab[w].index != i:
+                        print(w, tmp_w2v.vocab[w].index, i)
+
+                tmp_w2v.syn0 = w2v_model.wv.syn0[:vocab_limit, :]
+                w2v_model.wv.vocab = {}
+                w2v_model.wv.index2word = []
+                w2v_model.wv.syn0 = np.zeros((10, 300))
+                print(tmp_w2v)
+                return tmp_w2v
+
+            print(w2v_model)
+
+        except IOError:
+            print('No existed model. Training W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
+            texts = config.WikiCorpus()
+            w2v_model = word2vec.Word2Vec(texts, **DEFAULT_ARGUMENTS_W2V)
+            # init_sims: reduce memory but cannot continue training (because original vectors are removed.)
+            w2v_model.init_sims(replace=True)
+
+            w2v_model.save(fname)  # save model
+
+        print('Success to load W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
+
+        return w2v_model.wv
 
 
 class FtModel(object):
@@ -182,4 +239,5 @@ class FtModel(object):
         self.ft_model.wv.accuracy(DATASET_DIR + 'questions-words.txt')
         similarities = self.ft_model.wv.evaluate_word_pairs(datapath('wordsim353.tsv'))
         # print(similarities)
+
 
