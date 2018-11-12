@@ -214,6 +214,8 @@ class W2vModel(object):
         for word in neutral_word_list:
             print(self.w2v_model.most_similar(positive=['woman', word], negative=['man'], topn=10))
 
+    def save(self):
+        self.w2v_model.wv.save_word2vec_format('C:/Users/JAE4258_NLP/PycharmProjects/socialsent-master/socialsent/data/example_embeddings/glove.6B.100d.txt', binary=False)
 
 class FtModel(object):
     def __init__(self):
