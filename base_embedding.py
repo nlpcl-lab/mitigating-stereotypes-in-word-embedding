@@ -439,7 +439,7 @@ class MyModel(object):
         print("num of tests / num of labels: {} {} / {} {} in {:.2f} sec".format(
             len(X_train), len(X_test), len(set(y_train)), len(set(y_test)), time.time() - start_time))
 
-        for c in [1, 10, 100]:
+        for c in [1, 10, 50, 100]:
             clf = svm.SVC(C=c)
             if small_train:
                 clf.fit(X_train[:10000], y_train[:10000])
@@ -455,4 +455,26 @@ class MyModel(object):
 
         return 0
 
+    def show_topn_affect(self, dim=1, dim2=1, topn=1000):
+        sort_index_sum = np.ndarray.flatten(self.my_model.vectors[:, :dim]).argsort()
+        sort_index = np.prod(self.my_model.vectors[:, :dim+dim2], axis=1).argsort()
+        cond = np.ndarray.flatten(self.my_model.vectors[sort_index, dim:dim+dim2]) >= (
+                    self.threshold / self.init_modulate) if self.space_order[1] == 1 else \
+            np.ndarray.flatten(self.my_model.vectors[sort_index, dim:dim+dim2]) <= (
+                    self.threshold / self.init_modulate)
+
+        print("< top {} positive stereotypes >".format(topn))
+        if self.space_order[0] == 1:
+            for index in sort_index[cond][:-1-topn:-1]:
+                print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
+        else:
+            for index in sort_index[cond][:topn]:
+                print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
+        print("< top {} negative stereotypes >".format(topn))
+        if self.space_order[0] == 1:
+            for index in sort_index[cond][:topn]:
+                print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
+        else:
+            for index in sort_index[cond][:-1-topn:-1]:
+                print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
 
