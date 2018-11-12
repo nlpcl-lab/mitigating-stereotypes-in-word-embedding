@@ -125,7 +125,6 @@ def print_result(clf, X_male, y_male, normalize=True):
     return fpr, fnr
 
 
-
 class Vocab(object):
     """
     A single vocabulary item, used internally e.g. for constructing binary trees
@@ -194,6 +193,23 @@ class W2vModel(object):
         print('Success to load W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
 
         return w2v_model.wv
+
+    def test(self):
+        try:
+            self.w2v_model.wv.accuracy(DATASET_DIR+'questions-words.txt', restrict_vocab=300000)
+            """
+            analogy_score, result_list = self.w2v_model.wv.evaluate_word_analogies(datapath('questions-words.txt'))
+            print("score: {:.2f}".format(analogy_score))
+            for result_dict in result_list:
+                print("{}: True {} / False {}".format(result_dict['section'], result_dict['correct'][:3], result_dict['incorrect'][:3]))
+            """
+        except Exception as e:
+            self.w2v_model.accuracy(DATASET_DIR + 'questions-words.txt', restrict_vocab=300000)
+        try:
+            similarities = self.w2v_model.wv.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
+        except Exception as e:
+            similarities = self.w2v_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
+
 
 
 class FtModel(object):
