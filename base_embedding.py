@@ -3,8 +3,6 @@
 import json, codecs, time, re
 import numpy as np
 import logging
-
-from sklearn import svm, metrics
 from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, confusion_matrix
 import config
 
@@ -86,25 +84,34 @@ def word2rep(_X_train, _y_train, model):
 
     return X_train, y_train
 
+def divide_dataset_by_gender(X_test, y_test, model):
+    X_male, y_male, X_female, y_female = [], [], [], []
+    for X, y in zip(X_test, y_test):
+        #if np.allclose(X[2700:3000], model['Male']):
+        if np.allclose(X[1800:2100], model['Male']):
+            X_male.append(X)
+            y_male.append(y)
+        #elif np.allclose(X[2700:3000], model['Female']):
+        elif np.allclose(X[1800:2100], model['Female']):
+            X_female.append(X)
+            y_female.append(y)
+        else:
+            continue
 
-class Vocab(object):
-    """
-    A single vocabulary item, used internally e.g. for constructing binary trees
-    (incl. both word leaves and inner nodes).
-    Possible Fields:
-        - count: how often the word occurred in the training sentences
-        - index: the word's index in the embedding
-    """
+    return (X_male, y_male), (X_female, y_female)
 
-    def __init__(self, **kwargs):
-        self.count = 0
-        self.__dict__.update(kwargs)
+def print_result(clf, X_male, y_male, normalize=True):
+    pred = clf.predict(X_male)
+    acc, auc, pre, rec = accuracy_score(y_male, pred), roc_auc_score(y_male, pred), \
+                         precision_score(y_male, pred, average=None), recall_score(y_male, pred, average=None)
+    cnf_matrix = confusion_matrix(y_male, pred)
+    print(acc, auc, pre, rec)
+    print(cnf_matrix)
+    if normalize:
+        cnf_matrix = cnf_matrix.astype('float') / cnf_matrix.sum(axis=1)[:, np.newaxis]
+        print(cnf_matrix)
+        fpr = cnf_matrix[0, 1]
+        fnr = cnf_matrix[1, 0]
 
-    def __lt__(self, other):  # used for sorting in a priority queue
-        return self.count < other.count
-
-    def __str__(self):
-        vals = ['%s:%r' % (key, self.__dict__[key]) for key in sorted(self.__dict__) if not key.startswith('_')]
-        return "<" + ', '.join(vals) + ">"
-
+    return fpr, fnr
 
