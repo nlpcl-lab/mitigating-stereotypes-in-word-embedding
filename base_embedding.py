@@ -439,7 +439,7 @@ class MyModel(object):
         print("num of tests / num of labels: {} {} / {} {} in {:.2f} sec".format(
             len(X_train), len(X_test), len(set(y_train)), len(set(y_test)), time.time() - start_time))
 
-        for c in [1, 10, 50, 100]:
+        for c in [1, 10, 100]:
             clf = svm.SVC(C=c)
             if small_train:
                 clf.fit(X_train[:10000], y_train[:10000])

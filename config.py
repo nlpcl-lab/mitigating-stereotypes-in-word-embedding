@@ -176,12 +176,13 @@ class TwitterCorpus(object):
 
 
 class WikiCorpus(object):
-    def __init__(self):
+    def __init__(self, only_eng=True):
         self.fnames = glob.glob(WIKI_DIR + '*/wiki_*')
         # self.fnames = glob.glob(WIKI_DIR + 'AA/wiki_0*')
         self.doc_count = 0
         self.line_count = 0
         self.token_count = 0
+        self.only_eng = only_eng
 
     def __iter__(self):
         sentence, rest, max_sentence_length = [], '', 1000
@@ -214,12 +215,16 @@ class WikiCorpus(object):
                                     sentence = sentence[max_sentence_length:]
                         """
                         result = [token for token in re.split('\W', line) if token]
+                        if self.only_eng:
+                            result = [token for token in result if re.search(r'^[a-zA-Z][a-zA-Z0-9]{0,}$', token)]
                         # self.token_count += len(result)
                         if len(result) > MINIMUM_WINDOW_SIZE:
-                            yield [token for token in re.split('\W', line) if token]
+                            yield result
 
     def __str__(self):
         return "WikiCorpus(doc=%d, line=%d, token=%d)" % (self.doc_count, self.line_count, self.token_count)
+
+
 
 class CorpusCollector(object):
     def __init__(self, save_name, corpus='twitter', encoding='utf-8', progress=1000, min_count=5, analyze_mode=True, debug_mode=False):
