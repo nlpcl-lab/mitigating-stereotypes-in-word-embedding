@@ -343,6 +343,27 @@ class MyModel(object):
         self.threshold = threshold
         self.space_order = space_order
 
+    def load_w2v_model(self, fname, arranged_savfile=True):
+        try:
+            print('Loading My Model... in {0:.2f} seconds'.format(time.time() - start_time))
+            if not arranged_savfile:
+                w2v_model = gensim.models.KeyedVectors.load(fname)
+                wi = {w: i for i, w in enumerate(w2v_model.index2word)}
+                w2v_model.vocab = {word: Vocab(count=count, index=wi[word]) for word, count in w2v_model.vocab.items()}
+                w2v_model.save_word2vec_format(fname, binary=False)
+
+            my_model = word2vec.Word2VecKeyedVectors.load_word2vec_format(fname, binary=False)
+
+            #my_model = word2vec.Word2Vec.load(fname + 'w2vf')
+            print(my_model)
+
+        except IOError:
+            print('No existed model. Training My Model... in {0:.2f} seconds'.format(time.time() - start_time))
+            print("constructing")
+            exit()
+
+        print('Success to load My Model... in {0:.2f} seconds'.format(time.time() - start_time))
+        return my_model
 
 
 
