@@ -478,3 +478,23 @@ class MyModel(object):
             for index in sort_index[cond][:-1-topn:-1]:
                 print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
 
+if __name__ == "__main__":
+    #uci_dataset = load_UCI()
+    #w2v = W2vModel(vocab_limit=100000)
+    #w2v.test_analogy()
+    #w2v.test_UCI(uci_dataset, overall_acc=True)
+    #w2v.test()
+    w2v = {}
+
+    # sentiment cutoff: 19.660907745361328 with space_order: -1
+    my = MyModel(threshold=44.33755874633789, space_order=[-1, 1])
+    my.show_topn_affect()
+    my2 = MyModel(threshold=44.33755874633789, space_order=[-1, 1])
+    my2.modulate_sentiment(intensity=0)
+    my2.show_topn_affect()
+    #my.test(uci_datasset, intensity_order=1)
+
+    #my = MyModel(threshold=44.33755874633789, space_order=[-1, 1])
+    #my.test(uci_dataset, intensity_order=-1)
+
+    print("end")
