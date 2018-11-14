@@ -195,25 +195,6 @@ class WikiCorpus(object):
                     lines = re.split('[\r\n]+', doc)
                     # self.line_count += len(lines)
                     for line in lines:
-                        """
-                        # something about handling very long line
-                        elif len(line) > 8192:
-                            while True:
-                                text = rest + fin.read(8192)  # avoid loading the entire file (=1 line) into RAM
-                                if text == rest:  # EOF
-                                    sentence.extend(rest.split())  # return the last chunk of words, too (may be shorter/longer)
-                                    if sentence:
-                                        yield sentence
-                                    break
-                                # the last token may have been split in two... keep it for the next iteration
-                                last_token = text.rfind(' ')
-                                words, rest = (text[:last_token].split(), text[last_token:].strip()) if last_token >= 0 else \
-                                    ([], text)
-                                sentence.extend(words)
-                                while len(sentence) >= max_sentence_length:
-                                    yield sentence[:max_sentence_length]
-                                    sentence = sentence[max_sentence_length:]
-                        """
                         result = [token for token in re.split('\W', line) if token]
                         if self.only_eng:
                             result = [token for token in result if re.search(r'^[a-zA-Z][a-zA-Z0-9]{0,}$', token)]
