@@ -92,7 +92,7 @@ def word2rep(_X_train, _y_train, model):
 
     return X_train, y_train
 
-def identify_index_by_gender(X, y)
+def identify_index_by_gender(X, y):
     stats_dict = {}
     stats_dict['Male'] = []
     stats_dict['Female'] = []
