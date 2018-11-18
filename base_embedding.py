@@ -92,6 +92,15 @@ def word2rep(_X_train, _y_train, model):
 
     return X_train, y_train
 
+def identify_index_by_gender(X, y)
+    stats_dict = {}
+    stats_dict['Male'] = []
+    stats_dict['Female'] = []
+    for i, (tokens, y) in enumerate(zip(X, y)):
+        stats_dict[tokens[9]].append(i)
+
+    return np.array(stats_dict['Male']), np.array(stats_dict['Female'])
+
 def divide_dataset_by_gender(X_test, y_test, model):
     X_male, y_male, X_female, y_female = [], [], [], []
     for X, y in zip(X_test, y_test):
