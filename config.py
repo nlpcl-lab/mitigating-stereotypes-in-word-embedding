@@ -208,6 +208,12 @@ class WikiCorpus(object):
 
 class RedditCorpus(object):
     def __init__(self, only_eng=True):
+        # self.fnames = glob.glob(REDDIT_DIR + 'RC_2015-0')
+        self.fnames = glob.glob(REDDIT_DIR + 'RC_2015-01')
+        self.doc_count = 0
+        self.line_count = 0
+        self.token_count = 0
+        self.only_eng = only_eng
 
 
 class CorpusCollector(object):
