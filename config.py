@@ -225,6 +225,11 @@ class RedditCorpus(object):
                     if read_line:
                         comment_json = json.loads(read_line)
                         self.line_count += 1
+                        try:
+                            line = comment_json['body']
+                        except Exception as e:
+                            continue
+                        result = [token for token in re.split('\W', line) if token]
 
     def __str__(self):
         return "RedditCorpus(doc=%d, line=%d, token=%d)" % (self.doc_count, self.line_count, self.token_count)
