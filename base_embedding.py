@@ -416,6 +416,7 @@ class W2vModel(object):
     def get_keyedvectors(self):
         return self.w2v_model
 
+
 class FtModel(object):
     def __init__(self):
         """
@@ -526,21 +527,21 @@ class MyModel(object):
                     self.my_model.syn0 / np.sqrt((self.my_model.syn0 ** 2).sum(-1))[..., np.newaxis]).astype(float)
 
     def test(self, uci_dataset, intensity_order=1):
-        for i, intensity in enumerate([1, 10, 10]):
-            #if i == 0:
-            #    continue
+        #self.show_topn_affect()
+        for i, intensity in enumerate([1, 10, 10, 10]):
+            if i == 0 and intensity_order < 0:
+                continue
             print("Model with intensity 10^{}, threshold {}".format(i*intensity_order, self.threshold))
             self.modulate_sentiment(intensity=intensity**intensity_order)
             self.test_analogy()
-            #self.show_topn_affect()
-            self.test_UCI(uci_dataset, overall_acc=True)
-            self.test_intrinsic()
+            #self.test_UCI(uci_dataset)
+            #self.test_intrinsic()
 
+        print("Model with intensity 0, threshold {}".format(self.threshold))
         self.modulate_sentiment(intensity=0)
         self.test_analogy()
-        #self.show_topn_affect()
-        self.test_UCI(uci_dataset, overall_acc=True)
-        self.test_intrinsic()
+        #self.test_UCI(uci_dataset)
+        #self.test_intrinsic()
 
         """
         self.modulate_all(intensity=0)
@@ -550,43 +551,41 @@ class MyModel(object):
         #self.test_intrinsic()
         """
 
-
     def test_intrinsic(self):
         self.my_model.accuracy(DATASET_DIR + 'questions-words.txt', restrict_vocab=300000)
         similarities = self.my_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
         print(similarities)
 
     def test_analogy(self):
-        for word in neutral_word_list:
-            print(self.my_model.most_similar(positive=['woman', word], negative=['man'], topn=10))
+        for w1, w2 in sensitive_pair:
+            for word in neutral_word_list:
+                print('{}:{} = {}:{}'.format(
+                    w1, w2, word, self.my_model.most_similar(positive=[w2, word], negative=[w1], topn=10)))
 
-    def test_UCI(self, uci_dataset, small_train=True, overall_acc=True):
+    def test_UCI(self, uci_dataset, small_train=True):
         (_X_train, _y_train), (_X_test, _y_test) = uci_dataset
+        test_male_index, test_female_index = identify_index_by_gender(_X_test, _y_test)
         (X_train, y_train), (X_test, y_test) = word2rep(_X_train, _y_train, self.my_model), word2rep(_X_test, _y_test,
                                                                                                       self.my_model)
-        (X_male, y_male), (X_female, y_female) = divide_dataset_by_gender(X_test, y_test, self.my_model)
 
         assert len(X_train) == len(y_train)
         assert len(X_test) == len(y_test)
         print("num of tests / num of labels: {} {} / {} {} in {:.2f} sec".format(
             len(X_train), len(X_test), len(set(y_train)), len(set(y_test)), time.time() - start_time))
 
-        clf = svm.SVC(C=100)
-        if small_train:
-            clf.fit(X_train[:10000], y_train[:10000])
-        else:
-            clf.fit(X_train, y_train)
-        if overall_acc:
-            print_result(clf, X_test, y_test)
+        for c in SVM_Cs:
+            clf = svm.SVC(C=c)
+            if small_train:
+                clf.fit(X_train[:SMALL_UCI_NUM], y_train[:SMALL_UCI_NUM])
+            else:
+                clf.fit(X_train, y_train)
 
-        male_fpr, male_fnr = print_result(clf, X_male, y_male)
-        female_fpr, female_fnr = print_result(clf, X_female, y_female)
-        print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr / female_fpr, male_fnr / female_fnr))
-        print('-' * 30)
+            pred = clf.predict(X_test)
+            print_result(y_test, pred, test_male_index, test_female_index)
 
         return 0
 
-    def show_topn_affect(self, dim=1, dim2=1, topn=1000):
+    def show_topn_affect(self, dim=1, dim2=1, topn=5000):
         sort_index_sum = np.ndarray.flatten(self.my_model.vectors[:, :dim]).argsort()
         sort_index = np.prod(self.my_model.vectors[:, :dim+dim2], axis=1).argsort()
         cond = np.ndarray.flatten(self.my_model.vectors[sort_index, dim:dim+dim2]) >= (
@@ -595,19 +594,20 @@ class MyModel(object):
                     self.threshold / self.init_modulate)
 
         print("< top {} positive stereotypes >".format(topn))
-        if self.space_order[0] == 1:
+        if self.space_order[0] * self.space_order[1] == 1:
             for index in sort_index[cond][:-1-topn:-1]:
                 print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
         else:
             for index in sort_index[cond][:topn]:
                 print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
         print("< top {} negative stereotypes >".format(topn))
-        if self.space_order[0] == 1:
+        if self.space_order[0] * self.space_order[1] == 1:
             for index in sort_index[cond][:topn]:
                 print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
         else:
             for index in sort_index[cond][:-1-topn:-1]:
                 print(self.my_model.index2word[index], self.my_model.vectors[index][:dim+dim2])
+
 
 if __name__ == "__main__":
     uci_dataset = load_UCI()
