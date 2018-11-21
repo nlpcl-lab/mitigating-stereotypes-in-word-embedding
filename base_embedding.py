@@ -1,32 +1,47 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Tutorial_Example
+1. train word embedding (baseline):
+  run base_embeddings.py -> make 'w2v_wiki_sg_300_neg5_it2.model'
+2. train my embedding (transformed):
+  run evaluate_methods.py (SEED_NUM, MODEL_NAME, MY_MODEL_NAME, VOCAB_LIMIT) -> make 'my_embedding_wiki30'
+  please note sentiment,entity cutoff with space_order
+3. show statistics (compared to other models):
+  before running, set sentiment,entity cutoff with space_order ->
+    my = MyModel(threshold=<entity cutoff>, space_order=[<sent order>, <entity order>]
+  run base_embeddings.py -> w2v.test() and my.test()
+"""
 import json, codecs, time, re
 import gensim
-from gensim import utils, matutils
 from gensim.models import word2vec, FastText
 from gensim.test.utils import datapath
-import math
+from sklearn.decomposition import PCA
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
 import logging
+from copy import deepcopy
 
 from sklearn import svm, metrics
 from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, confusion_matrix
-import config
+
+from socialsent import config
 
 start_time = time.time()
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 # Basic constants
 DATASET_DIR = 'D:\\PycharmProjects_D\\Bias\\source\\'
-MODEL_NAME = 'wiki'  # MODEL_NAME = 'twitter_all' # MODEL_NAME = 'news2018'
-MY_MODEL_NAME = 'my_embedding'
+MODEL_NAME = 'reddit' # 'wiki'  # MODEL_NAME = 'twitter_all' # MODEL_NAME = 'news2018'
+MY_MODEL_NAME = 'my_embedding_' + MODEL_NAME
 SEED_NUM = '30'
 VOCAB_LIMIT = 100000
 ANNOTATED_VOCAB_LIMIT = 10000
 MODEL_DIR = 'D:\\PycharmProjects_D\\Bias\\'
-neutral_word_list = ['doctor', 'bartender', 'dancer', 'carpenter', 'shopkeeper', 'professor', 'coward', 'entrepreneurs']
+neutral_word_list2 = ['doctor', 'bartender', 'dancer', 'carpenter', 'shopkeeper', 'professor', 'coward', 'entrepreneurs']
+neutral_word_list = ['gentle', 'happy', 'speak', 'indicate', 'encouraged', 'good', 'diligent', 'violent', 'charming']
+sensitive_pair = [('man', 'woman'), ('elders', 'teenager'), ('she', 'he'), ('heterosexual', 'homosexual'),  ('Buddhist', 'Muslim'), ('Hebrew', 'Irishman')]
 
 DEFAULT_ARGUMENTS_W2V = dict(workers=4, sg=1, size=300, window=5, min_count=5, sample=10^-4, negative=5, seed=1, iter=2)
 DEFAULT_ARGUMENTS_FT = dict(**DEFAULT_ARGUMENTS_W2V, min_n=3, max_n=6)
