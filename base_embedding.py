@@ -152,6 +152,18 @@ def print_result(clf, X_male, y_male, normalize=True):
     return fpr, fnr
 
 
+def print_cnf_matrix(cnf_matrix, normalize=True):
+    print(cnf_matrix)
+    fpr, fnr = 0, 0
+    if normalize:
+        cnf_matrix = cnf_matrix.astype('float') / cnf_matrix.sum(axis=1)[:, np.newaxis]
+        print(cnf_matrix)
+        fpr = cnf_matrix[0, 1]
+        fnr = cnf_matrix[1, 0]
+
+    return fpr, fnr
+
+
 # means predicted:X, target:y
 def find_optimal_cutoff(predicted, target):
     """ Find the optimal probability cutoff point for a classification model related to event rate
