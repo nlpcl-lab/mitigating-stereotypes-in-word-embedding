@@ -26,7 +26,7 @@ from copy import deepcopy
 from sklearn import svm, metrics
 from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, confusion_matrix
 
-from socialsent import config
+import config
 
 start_time = time.time()
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -39,9 +39,6 @@ SEED_NUM = '30'
 VOCAB_LIMIT = 100000
 ANNOTATED_VOCAB_LIMIT = 10000
 MODEL_DIR = 'D:\\PycharmProjects_D\\Bias\\'
-neutral_word_list2 = ['doctor', 'bartender', 'dancer', 'carpenter', 'shopkeeper', 'professor', 'coward', 'entrepreneurs']
-neutral_word_list = ['gentle', 'happy', 'speak', 'indicate', 'encouraged', 'good', 'diligent', 'violent', 'charming']
-sensitive_pair = [('man', 'woman'), ('elders', 'teenager'), ('she', 'he'), ('heterosexual', 'homosexual'),  ('Buddhist', 'Muslim'), ('Hebrew', 'Irishman')]
 
 DEFAULT_ARGUMENTS_W2V = dict(workers=4, sg=1, size=300, window=5, min_count=5, sample=10^-4, negative=5, seed=1, iter=2)
 DEFAULT_ARGUMENTS_FT = dict(**DEFAULT_ARGUMENTS_W2V, min_n=3, max_n=6)
@@ -56,6 +53,12 @@ def load_analogy_pair(fname):
     with codecs.open(fname, 'r', encoding='utf-8', errors='ignore') as f:
         for i, line in enumerate(re.split('[\r\n]+', f.read())):
             tokens = re.split(r'\t', line)
+
+
+neutral_word_list2 = ['doctor', 'bartender', 'dancer', 'carpenter', 'shopkeeper', 'professor', 'coward', 'entrepreneurs']
+neutral_word_list = ['gentle', 'happy', 'speak', 'indicate', 'encouraged', 'good', 'diligent', 'violent', 'charming']
+sensitive_pair = [('man', 'woman'), ('elders', 'teenager'), ('she', 'he'), ('heterosexual', 'homosexual'),  ('Buddhist', 'Muslim'), ('Hebrew', 'Irishman')]
+
 
 def load_UCI():
     X_train, y_train, X_test, y_test = [], [], [], []
