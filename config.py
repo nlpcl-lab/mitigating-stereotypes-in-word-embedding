@@ -206,6 +206,10 @@ class WikiCorpus(object):
         return "WikiCorpus(doc=%d, line=%d, token=%d)" % (self.doc_count, self.line_count, self.token_count)
 
 
+class RedditCorpus(object):
+    def __init__(self, only_eng=True):
+
+
 class CorpusCollector(object):
     def __init__(self, save_name, corpus='twitter', encoding='utf-8', progress=1000, min_count=5, analyze_mode=True, debug_mode=False):
         self.save_name = save_name
