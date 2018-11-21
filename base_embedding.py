@@ -136,22 +136,6 @@ def UCI_stats_by_gender(X, y):
     return 0
 
 
-def print_result(clf, X_male, y_male, normalize=True):
-    pred = clf.predict(X_male)
-    acc, auc, pre, rec = accuracy_score(y_male, pred), roc_auc_score(y_male, pred), \
-                         precision_score(y_male, pred, average=None), recall_score(y_male, pred, average=None)
-    cnf_matrix = confusion_matrix(y_male, pred)
-    print(acc, auc, pre, rec)
-    print(cnf_matrix)
-    if normalize:
-        cnf_matrix = cnf_matrix.astype('float') / cnf_matrix.sum(axis=1)[:, np.newaxis]
-        print(cnf_matrix)
-        fpr = cnf_matrix[0, 1]
-        fnr = cnf_matrix[1, 0]
-
-    return fpr, fnr
-
-
 def print_result(y_test, pred, test_male_index, test_female_index):
     acc, auc, pre, rec = accuracy_score(y_test, pred), roc_auc_score(y_test, pred), \
                          precision_score(y_test, pred, average=None), recall_score(y_test, pred, average=None)
@@ -170,6 +154,18 @@ def print_result(y_test, pred, test_male_index, test_female_index):
     female_fpr, female_fnr = print_cnf_matrix(female_cnf_matrix)
     print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr / female_fpr, male_fnr / female_fnr))
     print('-' * 30)
+
+    return fpr, fnr
+
+
+def print_cnf_matrix(cnf_matrix, normalize=True):
+    print(cnf_matrix)
+    fpr, fnr = 0, 0
+    if normalize:
+        cnf_matrix = cnf_matrix.astype('float') / cnf_matrix.sum(axis=1)[:, np.newaxis]
+        print(cnf_matrix)
+        fpr = cnf_matrix[0, 1]
+        fnr = cnf_matrix[1, 0]
 
     return fpr, fnr
 
