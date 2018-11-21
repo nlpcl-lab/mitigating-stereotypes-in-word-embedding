@@ -152,14 +152,24 @@ def print_result(clf, X_male, y_male, normalize=True):
     return fpr, fnr
 
 
-def print_cnf_matrix(cnf_matrix, normalize=True):
-    print(cnf_matrix)
-    fpr, fnr = 0, 0
-    if normalize:
-        cnf_matrix = cnf_matrix.astype('float') / cnf_matrix.sum(axis=1)[:, np.newaxis]
-        print(cnf_matrix)
-        fpr = cnf_matrix[0, 1]
-        fnr = cnf_matrix[1, 0]
+def print_result(y_test, pred, test_male_index, test_female_index):
+    acc, auc, pre, rec = accuracy_score(y_test, pred), roc_auc_score(y_test, pred), \
+                         precision_score(y_test, pred, average=None), recall_score(y_test, pred, average=None)
+    cnf_matrix = confusion_matrix(y_test, pred)
+    male_cnf_matrix = confusion_matrix(y_test[test_male_index], pred[test_male_index])
+    female_cnf_matrix = confusion_matrix(y_test[test_female_index], pred[test_female_index])
+    print(acc, auc, pre, rec)
+    print("<=50K Male:Female = {:.3f} / {:.3f} ({} / {})".format(np.sum(male_cnf_matrix, axis=0)[0] / np.sum(cnf_matrix, axis=0)[0],
+                                                  np.sum(female_cnf_matrix, axis=0)[0] / np.sum(cnf_matrix, axis=0)[0],
+                                                  np.sum(male_cnf_matrix, axis=0)[0], np.sum(female_cnf_matrix, axis=0)[0]))
+    print(" >50K Male:Female = {:.3f} / {:.3f} ({} / {})".format(np.sum(male_cnf_matrix, axis=0)[1] / np.sum(cnf_matrix, axis=0)[1],
+                                                  np.sum(female_cnf_matrix, axis=0)[1] / np.sum(cnf_matrix, axis=0)[1],
+                                                  np.sum(male_cnf_matrix, axis=0)[1], np.sum(female_cnf_matrix, axis=0)[1]))
+    fpr, fnr = print_cnf_matrix(cnf_matrix)
+    male_fpr, male_fnr = print_cnf_matrix(male_cnf_matrix)
+    female_fpr, female_fnr = print_cnf_matrix(female_cnf_matrix)
+    print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr / female_fpr, male_fnr / female_fnr))
+    print('-' * 30)
 
     return fpr, fnr
 
