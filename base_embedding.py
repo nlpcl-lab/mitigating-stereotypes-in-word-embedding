@@ -52,6 +52,11 @@ INDEX_G = 6 # 9
 
 start_time = time.time()
 
+def load_analogy_pair(fname):
+    with codecs.open(fname, 'r', encoding='utf-8', errors='ignore') as f:
+        for i, line in enumerate(re.split('[\r\n]+', f.read())):
+            tokens = re.split(r'\t', line)
+
 def load_UCI():
     X_train, y_train, X_test, y_test = [], [], [], []
     with codecs.open(DATASET_DIR + 'UCI_adult_dataset.txt', 'r', encoding='utf-8', errors='ignore') as f:
