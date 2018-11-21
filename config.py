@@ -230,7 +230,11 @@ class RedditCorpus(object):
                         except Exception as e:
                             continue
                         result = [token for token in re.split('\W', line) if token]
-
+                        # self.token_count += len(result)
+                        if len(result) >= MINIMUM_WINDOW_SIZE:
+                            yield result
+                    else:
+                        break
     def __str__(self):
         return "RedditCorpus(doc=%d, line=%d, token=%d)" % (self.doc_count, self.line_count, self.token_count)
 
