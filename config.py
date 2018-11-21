@@ -8,6 +8,7 @@ import codecs
 import time
 import word2vec
 import re
+import json
 from collections import defaultdict, Counter
 from copy import deepcopy
 from gensim import models
@@ -224,6 +225,9 @@ class RedditCorpus(object):
                     if read_line:
                         comment_json = json.loads(read_line)
                         self.line_count += 1
+
+    def __str__(self):
+        return "RedditCorpus(doc=%d, line=%d, token=%d)" % (self.doc_count, self.line_count, self.token_count)
 
 class CorpusCollector(object):
     def __init__(self, save_name, corpus='twitter', encoding='utf-8', progress=1000, min_count=5, analyze_mode=True, debug_mode=False):
