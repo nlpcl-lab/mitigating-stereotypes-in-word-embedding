@@ -31,6 +31,10 @@ neutral_word_list = ['doctor', 'bartender', 'dancer', 'carpenter', 'shopkeeper',
 DEFAULT_ARGUMENTS_W2V = dict(workers=4, sg=1, size=300, window=5, min_count=5, sample=10^-4, negative=5, seed=1, iter=2)
 DEFAULT_ARGUMENTS_FT = dict(**DEFAULT_ARGUMENTS_W2V, min_n=3, max_n=6)
 
+SVM_Cs = [10, 50, 100, 500]
+SMALL_UCI_NUM = 32561 #32561
+INDEX_G = 6 # 9
+
 start_time = time.time()
 
 def load_UCI():
@@ -51,6 +55,11 @@ def load_UCI():
             if len(tokens) == 15:
                 X_test.append(tokens[:-1])
                 y_test.append(tokens[-1])
+
+    print("### UCI train set statistics ###")
+    UCI_stats_by_gender(X_train[:SMALL_UCI_NUM], y_train[:SMALL_UCI_NUM])
+    print("### UCI test set statistics ###")
+    UCI_stats_by_gender(X_test, y_test)
 
     return (X_train, y_train), (X_test, y_test)
 
@@ -134,6 +143,16 @@ def UCI_stats_by_gender(X, y):
                                                   stats_dict['Male'][1], stats_dict['Female'][1]))
 
     return 0
+
+
+def identify_index_by_gender(X, y):
+    stats_dict = {}
+    stats_dict['Male'] = []
+    stats_dict['Female'] = []
+    for i, (tokens, y) in enumerate(zip(X, y)):
+        stats_dict[tokens[9]].append(i)
+
+    return np.array(stats_dict['Male']), np.array(stats_dict['Female'])
 
 
 def print_result(y_test, pred, test_male_index, test_female_index):
