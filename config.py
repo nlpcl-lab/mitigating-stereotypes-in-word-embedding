@@ -216,6 +216,10 @@ class RedditCorpus(object):
         self.token_count = 0
         self.only_eng = only_eng
 
+    def __iter__(self):
+        for fname in self.fnames:
+            with codecs.open(fname, "r", encoding="utf-8", errors='ignore') as fin:
+                while True:
 
 class CorpusCollector(object):
     def __init__(self, save_name, corpus='twitter', encoding='utf-8', progress=1000, min_count=5, analyze_mode=True, debug_mode=False):
