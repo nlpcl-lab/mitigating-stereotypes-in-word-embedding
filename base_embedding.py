@@ -90,9 +90,10 @@ def word2rep(_X_train, _y_train, model):
     for X, y in zip(_X_train, _y_train):
         tmp_X = np.array([])
         for token in X:
-            if not re.search(r'[a-zA-Z\-?]+', token):
+            if not re.search(r'[a-zA-Z\-?]+', token) and INDEX_G == 9:
                 tmp_X = np.append(tmp_X, np.array([float(token)/10000]))
                 tmp_X = np.append(tmp_X, np.zeros(np.shape(model.syn0[1])[0] - 1))
+                #continue
             elif token in model.vocab:
                 tmp_X = np.append(tmp_X, model[token])
             # compound with '-': only select first vocab without oov for regulating sizes of all X
@@ -119,7 +120,7 @@ def word2rep(_X_train, _y_train, model):
             else:
                 y_train.append(0)
 
-    return X_train, y_train
+    return np.array(X_train), np.array(y_train)
 
 def identify_index_by_gender(X, y):
     stats_dict = {}
