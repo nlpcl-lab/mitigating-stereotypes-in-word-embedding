@@ -117,6 +117,25 @@ def divide_dataset_by_gender(X_test, y_test, model):
 
     return (X_male, y_male), (X_female, y_female)
 
+
+def UCI_stats_by_gender(X, y):
+    stats_dict = {}
+    stats_dict['Male'] = [0, 0]
+    stats_dict['Female'] = [0, 0]
+    for tokens, label in zip(X, y):
+        #stats_dict[tokens[6]][1 if re.search(r'>', label) else 0] += 1
+        stats_dict[tokens[9]][1 if re.search(r'>', label) else 0] += 1
+
+    print("<=50K Male:Female = {:.3f} / {:.3f} ({} / {})".format(stats_dict['Male'][0] / (stats_dict['Male'][0] + stats_dict['Female'][0]),
+                                                  stats_dict['Female'][0] / (stats_dict['Male'][0] + stats_dict['Female'][0]),
+                                                  stats_dict['Male'][0], stats_dict['Female'][0]))
+    print(" >50K Male:Female = {:.3f} / {:.3f} ({} / {})".format(stats_dict['Male'][1] / (stats_dict['Male'][1] + stats_dict['Female'][1]),
+                                                  stats_dict['Female'][1] / (stats_dict['Male'][1] + stats_dict['Female'][1]),
+                                                  stats_dict['Male'][1], stats_dict['Female'][1]))
+
+    return 0
+
+
 def print_result(clf, X_male, y_male, normalize=True):
     pred = clf.predict(X_male)
     acc, auc, pre, rec = accuracy_score(y_male, pred), roc_auc_score(y_male, pred), \
