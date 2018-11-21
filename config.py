@@ -28,6 +28,7 @@ else:
     COLLECTED_FNAME_WIKI = 'D:\\dataset\\wiki\\en.txt'
 
 WIKI_DIR = 'D:/dataset/wiki/text_en/'
+REDDIT_DIR = 'D:/dataset/reddit/'
 MINIMUM_WINDOW_SIZE = 11
 start_time = time.time()
 
