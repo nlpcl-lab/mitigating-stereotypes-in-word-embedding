@@ -122,6 +122,7 @@ def word2rep(_X_train, _y_train, model):
 
     return np.array(X_train), np.array(y_train)
 
+
 def identify_index_by_gender(X, y):
     stats_dict = {}
     stats_dict['Male'] = []
@@ -130,22 +131,6 @@ def identify_index_by_gender(X, y):
         stats_dict[tokens[9]].append(i)
 
     return np.array(stats_dict['Male']), np.array(stats_dict['Female'])
-
-def divide_dataset_by_gender(X_test, y_test, model):
-    X_male, y_male, X_female, y_female = [], [], [], []
-    for X, y in zip(X_test, y_test):
-        #if np.allclose(X[2700:3000], model['Male']):
-        if np.allclose(X[1800:2100], model['Male']):
-            X_male.append(X)
-            y_male.append(y)
-        #elif np.allclose(X[2700:3000], model['Female']):
-        elif np.allclose(X[1800:2100], model['Female']):
-            X_female.append(X)
-            y_female.append(y)
-        else:
-            continue
-
-    return (X_male, y_male), (X_female, y_female)
 
 
 def UCI_stats_by_gender(X, y):
@@ -165,15 +150,23 @@ def UCI_stats_by_gender(X, y):
 
     return 0
 
+"""
+def divide_dataset_by_gender(X_test, y_test, model):
+    X_male, y_male, X_female, y_female = [], [], [], []
+    for X, y in zip(X_test, y_test):
+        #if np.allclose(X[2700:3000], model['Male']):
+        if np.allclose(X[1800:2100], model['Male']):
+            X_male.append(X)
+            y_male.append(y)
+        #elif np.allclose(X[2700:3000], model['Female']):
+        elif np.allclose(X[1800:2100], model['Female']):
+            X_female.append(X)
+            y_female.append(y)
+        else:
+            continue
 
-def identify_index_by_gender(X, y):
-    stats_dict = {}
-    stats_dict['Male'] = []
-    stats_dict['Female'] = []
-    for i, (tokens, y) in enumerate(zip(X, y)):
-        stats_dict[tokens[9]].append(i)
-
-    return np.array(stats_dict['Male']), np.array(stats_dict['Female'])
+    return (X_male, y_male), (X_female, y_female)
+"""
 
 
 def print_result(y_test, pred, test_male_index, test_female_index):
@@ -265,6 +258,50 @@ class W2vModel(object):
         if not vocab_limit:
             self.w2v_model.init_sims()                          # for using wv.syn0norm
 
+    def load_w2v_model_old(self, fname, vocab_limit, only_eng=False):
+        try:
+            print('Loading W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
+            w2v_model = word2vec.Word2Vec.load(fname)
+            if vocab_limit:    # it uses KeyedVector class (Word2vec.wv). Do not point wv.
+                tmp_w2v = gensim.models.KeyedVectors(vector_size=300)
+                if only_eng:
+                    limited_vocab_list = []
+                    i = 0
+                    for word, vocab in sorted(w2v_model.wv.vocab.items(), key=lambda item: -item[1].count):
+                        if re.search(r'^[a-zA-Z][a-zA-Z0-9]{0,}$', word):
+                            limited_vocab_list.append((word, vocab))
+                            i += 1
+                        if i >= vocab_limit:
+                            break
+                else:
+                    limited_vocab_list = sorted(w2v_model.wv.vocab.items(), key=lambda item: -item[1].count)[:vocab_limit]
+                tmp_w2v.vocab = dict(limited_vocab_list)
+                #tmp_w2v.index2word = w2v_model.wv.index2word[:vocab_limit]
+                tmp_w2v.index2word, _ = zip(*limited_vocab_list)
+                limited_vocab_indexes = [w2v_model.wv.vocab[w].index for w in tmp_w2v.index2word]
+                # limited_vocab_indexes is not incresing order (it's mixed): print(limited_vocab_indexes)
+                #tmp_w2v.syn0 = w2v_model.wv.syn0[:vocab_limit, :]
+                tmp_w2v.syn0 = w2v_model.wv.syn0[limited_vocab_indexes, :]
+                w2v_model.wv.vocab = {}
+                w2v_model.wv.index2word = []
+                w2v_model.wv.syn0 = np.zeros((10, 300))
+                print(tmp_w2v)
+                return tmp_w2v
+
+            print(w2v_model)
+
+        except IOError:
+            print('No existed model. Training W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
+            texts = config.WikiCorpus()
+            w2v_model = word2vec.Word2Vec(texts, **DEFAULT_ARGUMENTS_W2V)
+            # init_sims: reduce memory but cannot continue training (because original vectors are removed.)
+            w2v_model.init_sims(replace=True)
+
+            w2v_model.save(fname)  # save model
+
+        print('Success to load W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
+        return w2v_model
+
     def load_w2v_model_new(self, fname, vocab_limit):
         try:
             print('Loading W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
@@ -290,7 +327,15 @@ class W2vModel(object):
 
         except IOError:
             print('No existed model. Training W2v Model... in {0:.2f} seconds'.format(time.time() - start_time))
-            texts = config.WikiCorpus()
+            texts = ''
+            if MODEL_NAME == 'wiki':
+                texts = config.WikiCorpus()
+            elif MODEL_NAME == 'reddit':
+                texts = config.RedditCorpus()
+            else:
+                print("please select corpus for training model.")
+                exit(1)
+            print('training w2v with {} corpus ... in {:.2f} seconds'.format(MODEL_NAME, config.whattime()))
             w2v_model = word2vec.Word2Vec(texts, **DEFAULT_ARGUMENTS_W2V)
             # init_sims: reduce memory but cannot continue training (because original vectors are removed.)
             w2v_model.init_sims(replace=True)
@@ -301,7 +346,7 @@ class W2vModel(object):
 
         return w2v_model.wv
 
-    def test(self):
+    def test_intrinsic(self):
         try:
             self.w2v_model.wv.accuracy(DATASET_DIR+'questions-words.txt', restrict_vocab=300000)
             """
@@ -317,37 +362,37 @@ class W2vModel(object):
         except Exception as e:
             similarities = self.w2v_model.evaluate_word_pairs(datapath('wordsim353.tsv'), restrict_vocab=300000)
 
-    def test_UCI(self, uci_dataset, small_train=True, overall_acc=True):
+    def test_UCI(self, uci_dataset, small_train=True):
         (_X_train, _y_train), (_X_test, _y_test) = uci_dataset
-        (X_train, y_train), (X_test, y_test) = word2rep(_X_train, _y_train, self.w2v_model), word2rep(_X_test, _y_test, self.w2v_model)
-        (X_male, y_male), (X_female, y_female) = divide_dataset_by_gender(X_test, y_test, self.w2v_model)
+        test_male_index, test_female_index = identify_index_by_gender(_X_test, _y_test)
+        (X_train, y_train), (X_test, y_test) = word2rep(_X_train, _y_train, self.w2v_model), word2rep(_X_test, _y_test,
+                                                                                                      self.w2v_model)
 
         assert len(X_train) == len(y_train)
         assert len(X_test) == len(y_test)
         print("num of tests / num of labels: {} {} / {} {} in {:.2f} sec".format(
             len(X_train), len(X_test), len(set(y_train)), len(set(y_test)), time.time() - start_time))
 
-        clf = svm.SVC(C=100)
-        if small_train:
-            clf.fit(X_train[:10000], y_train[:10000])
-        else:
-            clf.fit(X_train, y_train)
-        if overall_acc:
-            print_result(clf, X_test, y_test)
+        for c in SVM_Cs:
+            clf = svm.SVC(C=c)
+            if small_train:
+                clf.fit(X_train[:SMALL_UCI_NUM], y_train[:SMALL_UCI_NUM])
+            else:
+                clf.fit(X_train, y_train)
 
-        male_fpr, male_fnr = print_result(clf, X_male, y_male)
-        female_fpr, female_fnr = print_result(clf, X_female, y_female)
-        print("fpr_bias_ratio: {:.2f}, fnr_bias_ratio: {:.2f}".format(male_fpr/female_fpr, male_fnr/female_fnr))
-        print('-' * 30)
+            pred = clf.predict(X_test)
+            print_result(y_test, pred, test_male_index, test_female_index)
 
         return 0
 
     def test_analogy(self):
-        for word in neutral_word_list:
-            print(self.w2v_model.most_similar(positive=['woman', word], negative=['man'], topn=10))
+        for w1, w2 in sensitive_pair:
+            for word in neutral_word_list:
+                print('{}:{} = {}:{}'.format(
+                    w1, w2, word, self.w2v_model.most_similar(positive=[w2, word], negative=[w1], topn=10)))
 
     def save(self):
-        self.w2v_model.wv.save_word2vec_format('C:/Users/JAE4258_NLP/PycharmProjects/socialsent-master/socialsent/data/example_embeddings/glove.6B.100d.txt', binary=False)
+        self.w2v_model.save_word2vec_format(DATASET_DIR +'reddit.w2v.300d.txt', binary=False)
 
     def save_vocab(self):
         """
@@ -367,6 +412,9 @@ class W2vModel(object):
             print("Success to save wiki vocabulary.")
 
         self.w2v_vocab = tmp_vocab
+
+    def get_keyedvectors(self):
+        return self.w2v_model
 
 class FtModel(object):
     def __init__(self):
