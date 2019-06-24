@@ -24,10 +24,10 @@ Note that all external resources should be located at ```source/```
 #### Test our word embedding
 - ```python base_embeddings.py``` train word embedding -> make 'w2v_wiki_sg_300_neg5_it2.model' (baseline)
 - ```python evaluate_methods.py``` train word embedding with mitigating stereotypes -> make 'my_embedding_wikiSEED_NUM' (transformed)
-  please note sentiment, entity cutoff with space_order
-- ```python base_embeddings.py``` show statistics (compared to other models)
-  before running, set sentiment, entity cutoff with space_order -> 
+  - please note sentiment, entity cutoff with space_order
+- Set sentiment, entity cutoff with space_order -> 
   ```my = MyModel(threshold=<entity cutoff>, space_order=[<sent order>, <entity order>]```
+- ```python base_embeddings.py``` show statistics (compared to other models)
 
 ### Note
 - Model parameter files and required data for this module are available at http://credon.kaist.ac.kr/downloads
