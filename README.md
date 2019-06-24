@@ -18,7 +18,7 @@ Note that all external resources should be located at ```source/```
 ### Usage
 #### Get a word embedding with mitigating stereotypes
 - python base_embeddings.py
-  train word embedding -> make 'w2v_wiki_sg_300_neg5_it2.model'
+* train word embedding -> make 'w2v_wiki_sg_300_neg5_it2.model'
 - train word embedding with mitigating stereotypes (transformed):
   run evaluate_methods.py (SEED_NUM, MODEL_NAME, MY_MODEL_NAME, VOCAB_LIMIT) -> make 'my_embedding_wikiSEED_NUM'
   
