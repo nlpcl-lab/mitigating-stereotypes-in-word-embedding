@@ -12,14 +12,10 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 ### prerequistes
 * Original word embedding for mitigating stereotype (e.g. [word2vec google-news vectors](https://github.com/mmihaltz/word2vec-GoogleNews-vectors) with binary=False)
 * Opinion Lexicon
-Note that all external resources should be located at ```source/```
+  - Note that all external resources should be located at ```source/```
 
 ### code
 - Prepare an original word embedding
-- ```python evaluate_methods.py``` generate a word embedding with mitigating stereotypes
+- ```python mitigating_stereotypes.py``` generate a word embedding with mitigating stereotypes
 
-
-### Reference
-* William L. Hamilton, Kevin Clark, Jure Leskovec, and Dan Jurafsky. Inducing Domain-Specific Sentiment Lexicons from Unlabeled Corpora. Proceedings of EMNLP. 2016. (to appear; arXiv:1606.02820) [[site](https://github.com/williamleif/socialsent)]
-* Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings by Tolga Bolukbasi, Kai-Wei Chang, James Zou, Venkatesh Saligrama, and Adam Kalai. Proceedings of NIPS 2016. [[site](https://github.com/tolga-b/debiaswe)]
 
