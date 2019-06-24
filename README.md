@@ -16,13 +16,13 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 Note that all external resources should be located at ```source/```
 
 ### Usage
-## Get a word embedding with mitigating stereotypes
+Get a word embedding with mitigating stereotypes
 - 1. train word embedding (baseline):
   run base_embeddings.py -> make 'w2v_wiki_sg_300_neg5_it2.model'
 - 2. train word embedding with mitigating stereotypes (transformed):
   run evaluate_methods.py (SEED_NUM, MODEL_NAME, MY_MODEL_NAME, VOCAB_LIMIT) -> make 'my_embedding_wikiSEED_NUM'
   
-## Test our word embedding
+Test our word embedding
   please note sentiment,entity cutoff with space_order
 - 3. show statistics (compared to other models):
   before running, set sentiment, entity cutoff with space_order ->
