@@ -1,6 +1,6 @@
 Word embedding with mitigating stereotypes through sentiment modulation
 ================================================
-We provide the code and data for the following paper: Mitigating Stereotypes in Word Embedding through Sentiment Modulation by Huije Lee, Jin-Woo Chung, Jong C. Park. Proceedings of NIPS 2016. This repository provides a model that mitigates stereotypes in word embedding through sentiment modulation. 
+We provide the code and data for the following paper: Mitigating Stereotypes in Word Embedding through Sentiment Modulation by Huije Lee, Jin-Woo Chung, Jong C. Park. Korea Software Congress 2018 (KSC 2018), Pyeongchang (Korea), December 2018. This repository provides a model that mitigates stereotypes in word embedding through sentiment modulation. 
 
 ### Requirements
 - Python >= 3.5
@@ -15,7 +15,7 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 ### Note
 - Model parameter files and required data for this module are available at http://credon.kaist.ac.kr/downloads
 
-# sentbias
-sentiment neutralization for mitigating gender stereotypes in word embeddings
+### Reference
+> https://github.com/tolga-b/debiaswe
 
 Model parameter files and required data for this module are available at
