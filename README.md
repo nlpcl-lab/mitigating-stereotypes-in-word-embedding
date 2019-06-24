@@ -16,6 +16,6 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 - Model parameter files and required data for this module are available at http://credon.kaist.ac.kr/downloads
 
 ### Reference
-> https://github.com/tolga-b/debiaswe
+* William L. Hamilton, Kevin Clark, Jure Leskovec, and Dan Jurafsky. Inducing Domain-Specific Sentiment Lexicons from Unlabeled Corpora. Proceedings of EMNLP. 2016. (to appear; arXiv:1606.02820) [[site]](https://github.com/williamleif/socialsent)
+* Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings by Tolga Bolukbasi, Kai-Wei Chang, James Zou, Venkatesh Saligrama, and Adam Kalai. Proceedings of NIPS 2016. [[site]] (https://github.com/tolga-b/debiaswe)
 
-Model parameter files and required data for this module are available at
