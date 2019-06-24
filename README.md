@@ -8,14 +8,28 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 - scikit-learn >=	0.19.1
 - keras == 0.3.3
 
+### prerequistes
+* Download IBM Debater® - Claims and Evidence dataset. [[here]](https://www.research.ibm.com/haifa/dept/vst/debating_data.shtml)
+* Download Glove word embedding. [[here]](https://nlp.stanford.edu/projects/glove/)
+* Install StanfordCoreNLP. [[here]](https://stanfordnlp.github.io/CoreNLP/index.html)
+* Download [UCI Adult dataset](https://archive.ics.uci.edu/ml/datasets/Adult) (only for test) 
+Note that all external resources should be located at ```source/```
+
 ### Usage
-- python Infer.py example/input.json example/output.json
-- For the input format, please refer to the "example/input.json".
+1. train word embedding (baseline):
+  run base_embeddings.py -> make 'w2v_wiki_sg_300_neg5_it2.model'
+2. train my embedding (transformed):
+  run evaluate_methods.py (SEED_NUM, MODEL_NAME, MY_MODEL_NAME, VOCAB_LIMIT) -> make 'my_embedding_wikiSEED_NUM'
+  please note sentiment,entity cutoff with space_order
+3. show statistics (compared to other models):
+  before running, set sentiment,entity cutoff with space_order ->
+    my = MyModel(threshold=<entity cutoff>, space_order=[<sent order>, <entity order>]
+  run base_embeddings.py -> w2v.test() and my.test()
 
 ### Note
 - Model parameter files and required data for this module are available at http://credon.kaist.ac.kr/downloads
 
 ### Reference
-* William L. Hamilton, Kevin Clark, Jure Leskovec, and Dan Jurafsky. Inducing Domain-Specific Sentiment Lexicons from Unlabeled Corpora. Proceedings of EMNLP. 2016. (to appear; arXiv:1606.02820) [[site]](https://github.com/williamleif/socialsent)
-* Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings by Tolga Bolukbasi, Kai-Wei Chang, James Zou, Venkatesh Saligrama, and Adam Kalai. Proceedings of NIPS 2016. [[site]] (https://github.com/tolga-b/debiaswe)
+* William L. Hamilton, Kevin Clark, Jure Leskovec, and Dan Jurafsky. Inducing Domain-Specific Sentiment Lexicons from Unlabeled Corpora. Proceedings of EMNLP. 2016. (to appear; arXiv:1606.02820) [[site](https://github.com/williamleif/socialsent)]
+* Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings by Tolga Bolukbasi, Kai-Wei Chang, James Zou, Venkatesh Saligrama, and Adam Kalai. Proceedings of NIPS 2016. [[site](https://github.com/tolga-b/debiaswe)]
 
