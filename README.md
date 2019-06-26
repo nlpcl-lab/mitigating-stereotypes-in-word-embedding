@@ -10,7 +10,7 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 
 ## Get a word embedding with mitigating stereotypes
 ### Prerequistes
-* Original word embedding for mitigating stereotype (e.g. [word2vec google-news vectors](https://github.com/mmihaltz/word2vec-GoogleNews-vectors) with binary=False, [glove.6b.300d](http://nlp.stanford.edu/data/glove.840B.300d.zip))
+* Original word embedding for mitigating stereotype (e.g. [word2vec google-news vectors](https://github.com/mmihaltz/word2vec-GoogleNews-vectors), [glove.6b.300d](http://nlp.stanford.edu/data/glove.840B.300d.zip))
 * Opinion Lexicon
   - Note that all external resources should be located at ```source/```
 
