@@ -9,17 +9,22 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 - keras == 0.3.3
 
 ## Get a word embedding with mitigating stereotypes
-### prerequistes
+### Prerequistes
 * Original word embedding for mitigating stereotype (e.g. [word2vec google-news vectors](https://github.com/mmihaltz/word2vec-GoogleNews-vectors) with binary=False, [glove.6b.300d](http://nlp.stanford.edu/data/glove.840B.300d.zip))
 * Opinion Lexicon
   - Note that all external resources should be located at ```source/```
 
-### code
+### Code
 - Prepare an original word embedding
 - ```python mitigating_stereotypes.py``` generate a word embedding with mitigating stereotypes
 
 
+### Examples
+
+
 ### References
+
+Please cite following paper if using this code for learning word representations.
 
 ```
 @InProceedings{lee2018mitigating,
