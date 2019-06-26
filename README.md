@@ -1,4 +1,4 @@
-Word embedding with mitigating stereotypes through sentiment modulation
+Mitigating stereotypes in Word embedding through sentiment modulation
 ================================================
 We provide the code and data for the following paper: Mitigating Stereotypes in Word Embedding through Sentiment Modulation by Huije Lee, Jin-Woo Chung, and Jong C. Park. Korea Software Congress 2018 (KSC 2018), Pyeongchang (Korea), December 2018. This repository provides a model that mitigates stereotypes in word embedding through sentiment modulation. 
 
