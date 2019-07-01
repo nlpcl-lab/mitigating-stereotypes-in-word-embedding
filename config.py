@@ -30,7 +30,7 @@ RANDOM_BASE_WORDS = False
 SAVED_MODEL = False # for polarity_induction_methods (skip learning)
 
 # for base_embedding.py
-CONSIDER_GENDER = False
+CONSIDER_GENDER = True
 WIKI_DIR = 'D:/dataset/wiki/text_en/'
 REDDIT_DIR = 'D:/dataset/reddit/'
 MINIMUM_WINDOW_SIZE = 11

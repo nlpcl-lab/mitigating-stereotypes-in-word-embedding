@@ -6,7 +6,7 @@ Unlabeled Corpora. Proceedings of EMNLP. 2016. (to appear; arXiv:1606.02820).
 """
 
 import random
-import codecs, re, time
+import time
 import numpy as np
 import config
 import embedding
