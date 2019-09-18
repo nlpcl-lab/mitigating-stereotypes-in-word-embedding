@@ -22,7 +22,7 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 ### Examples
 In the word analogy about occupation (pre-trained Glove.300d)
 
-\<group1>:\<group2> = \<occupation>: <origin> / \<mitigated>
+\<group1>:\<group2> = \<occupation>: \<origin> / \<mitigated>
 
 Changes from origin to mitigated:
 - man:woman = electrician: [origin]nurse / [mitigated]machinist
