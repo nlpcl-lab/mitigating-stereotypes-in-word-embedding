@@ -485,9 +485,9 @@ class MyModel(object):
                 continue
             print("Model with intensity 10^{}, threshold {}".format(i*intensity_order, self.threshold))
             self.modulate_sentiment(intensity=intensity**intensity_order)
-            self.test_analogy()
-            #self.test_UCI(uci_dataset)
-            #self.test_intrinsic()
+            #self.test_analogy()
+            self.test_UCI(uci_dataset)
+            self.test_intrinsic()
             #self.show_vocab_tsnescatterplot()
             #self.show_topn_embedding()
         print("Model with intensity 0, threshold {}".format(self.threshold))
@@ -819,9 +819,9 @@ if __name__ == "__main__":
     if 'w2v' in execute_models or 'deb' in execute_models:
         w2v = W2vModel(vocab_limit=100000)
         if 'w2v' in execute_models:
-            w2v.test_analogy()
-            #w2v.test_UCI(uci_dataset, small_train=True)
-            #w2v.test_intrinsic()
+            #w2v.test_analogy()
+            w2v.test_UCI(uci_dataset, small_train=True)
+            w2v.test_intrinsic()
         else:
             tmp_vectors = w2v.get_keyedvectors()
             w2v = {}
