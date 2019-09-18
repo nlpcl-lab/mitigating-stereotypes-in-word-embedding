@@ -492,9 +492,9 @@ class MyModel(object):
             #self.show_topn_embedding()
         print("Model with intensity 0, threshold {}".format(self.threshold))
         self.modulate_sentiment(intensity=0)
-        self.test_analogy()
-        #self.test_UCI(uci_dataset)
-        #self.test_intrinsic()
+        #self.test_analogy()
+        self.test_UCI(uci_dataset)
+        self.test_intrinsic()
 
     def test_intrinsic(self):
         self.my_model.accuracy(SOURCE_DIR + 'questions-words.txt', restrict_vocab=300000)

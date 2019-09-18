@@ -20,6 +20,19 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 - ```python show_statistics.py``` shows the performance results of the original embedding and the mitigated embedding.
 
 ### Examples
+In the word analogy about occupation (pre-trained Glove.300d)
+
+\<group1>:\<group2> = \<occupation>: <origin> / \<mitigated>
+
+Changes from origin to mitigated:
+- man:woman = electrician: [origin]nurse / [mitigated]machinist
+- man:woman = crooner: [origin]singer / [mitigated]diva
+- man:woman = crusader: [origin]feminist / [mitigated]crusade
+
+Maintained:
+- man:woman = entrepreneur: [origin]businesswoman / [mitigated]businesswoman
+- man:woman = actor: [origin]actress / [mitigated]actress
+- man:woman = waiter: [origin]waitress / [mitigated]waitress
 
 
 ### Results
@@ -45,3 +58,4 @@ Please cite following paper if using this code for learning word representations
 - Bing Liu, Minqing Hu and Junsheng Cheng. "Opinion Observer: Analyzing and Comparing Opinions on the Web." Proceedings of the 14th International World Wide Web conference (WWW-2005), May 10-14, 2005, Chiba, Japan.
 - William L. Hamilton, Kevin Clark, Jure Leskovec, and Dan Jurafsky. Inducing Domain-Specific Sentiment Lexicons from
 Unlabeled Corpora. Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing (EMNLP 2016), Nov 1-5, 2016, Austin, Texas, USA.
+- Bolukbasi et al. "Man is to computer programmer as woman is to homemaker? debiasing word embeddings." In Advances in neural information processing systems. 2016.
