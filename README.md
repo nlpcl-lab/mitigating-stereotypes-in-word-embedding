@@ -24,8 +24,8 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 
 ### Results
 (Original Glove -> mitigated Glove)
-- Performance (Intrinsic evaluation): 70.7% -> 70.4% (Accuracy -0.3%), 0.601 -> 0.592 (r_s -0.009)
-- Bias ratio (False positive ratio): 5.45 -> 4.72 (-16%)
+- Performance (Intrinsic evaluation): 70.7% -> 70.4% (Accuracy -0.3%), 0.601 -> 0.592 (Spearman r -0.009)
+- Bias ratio (False positive ratio): 5.45 -> 4.72 (ratio -16%)
 
 ### References
 
