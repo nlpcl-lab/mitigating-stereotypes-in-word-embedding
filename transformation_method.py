@@ -28,7 +28,6 @@ def densify(embeddings, positive_seeds, negative_seeds, entity_seeds, notity_see
             embeddings, p_seeds, n_seeds, e_seeds, ne_seeds, n_dim=n_dim, n2_dim=n2_dim, plot=False, lexicon2_vocab=lexicon2_vocab, **kwargs)
         polarities = {w:new_embeddings[w][0] for w in embeddings.iw}
         entities = {w:new_embeddings[w][n_dim:n_dim+n2_dim] for w in embeddings.iw}
-    # human entity dim is 0, sentiment dim is 1  (densifier.py:222)
     #polarities = {w: new_embeddings[w][n_dim:n_dim+n2_dim] for w in embeddings.iw}
     #entities = {w:new_embeddings[w][0] for w in embeddings.iw}
     return polarities, entities

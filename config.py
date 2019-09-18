@@ -9,6 +9,7 @@ import re
 import json
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 from sklearn import metrics
 from gensim.models import word2vec
 
@@ -18,18 +19,18 @@ SOURCE_DIR = 'source/'
 
 VOCAB_LIMIT = 100000
 ANNOTATED_VOCAB_LIMIT = 10000
-MODEL_NAME = 'wiki'  # 'reddit' 'redditsmall'
-BASE_WORD_NUM = '20'
+MODEL_NAME = 'glove' #'wiki'  # 'reddit' 'redditsmall'
+BASE_WORD_NUM = '20' # '30'
 WORD_EMBEDDING_NAME = "/source/glove.6B.300d.txt"
-#WORD_EMBEDDING_NAME = MODEL_DIR + MODEL_NAME + ".w2v.300d"
-MITIGATED_EMBEDDING_NAME = MODEL_DIR + "migigated{}_".format(BASE_WORD_NUM) + MODEL_NAME + ".glove.300d"
-#WORD_EMBEDDING_NAME = MODEL_DIR + 'my_embedding_{}{}".format(MODEL_NAME, BASE_WORD_NUM)
-#MITIGATED_EMBEDDING_NAME = MODEL_DIR + 'my_embedding_{}{}".format(MODEL_NAME, BASE_WORD_NUM)
+#WORD_EMBEDDING_NAME = MODEL_DIR + 'w2v_wiki_sg_300_neg5_it2.model'
+MITIGATED_EMBEDDING_NAME = MODEL_DIR + "mitigated{}_".format(BASE_WORD_NUM) + MODEL_NAME + ".300d"
+#MITIGATED_EMBEDDING_NAME = MODEL_DIR + 'my_embedding_{}{}'.format(MODEL_NAME, BASE_WORD_NUM)
+MITIGATED_EMBEDDING_INFO = MITIGATED_EMBEDDING_NAME.rsplit('.', 1)[0] + ".info"
 UNBALANCED_BASE_WORDS = False
 RANDOM_BASE_WORDS = False
 SAVED_MODEL = False # for polarity_induction_methods (skip learning)
 
-# for base_embedding.py
+# Option for training new embedding (base_embedding.py)
 CONSIDER_GENDER = True
 WIKI_DIR = 'D:/dataset/wiki/text_en/'
 REDDIT_DIR = 'D:/dataset/reddit/'
@@ -45,7 +46,6 @@ def load_my_model(fname):
     try:
         print('Loading My Model... in {0:.2f} seconds'.format(whattime()))
         my_model = word2vec.Word2VecKeyedVectors.load_word2vec_format(fname, binary=False)
-        #my_model = word2vec.Word2Vec.load(fname + 'w2vf')
         print(my_model)
 
     except IOError:
@@ -54,73 +54,6 @@ def load_my_model(fname):
 
     print('Success to load My Model... in {0:.2f} seconds'.format(time.time() - start_time))
     return my_model
-
-
-def change_twitter_tag_simpler(tag):
-    if tag == "Noun":
-        tag = "N"
-    elif tag == "Verb":
-        tag = "V"
-    elif tag == "Adjective":
-        tag = "A"
-    elif tag == "Adverb":
-        tag = "a"
-    elif tag == "Determiner":
-        tag = "D"
-    elif tag == "Eomi":
-        tag = "E"
-    elif tag == "Exclamation":
-        tag = "e"
-    elif tag == "Foreign":
-        tag = "F"
-    elif tag == "Number":
-        tag = "n"
-    elif tag == "Hashtag":
-        tag = "H"
-    elif tag == "Suffix":
-        tag = "S"
-    elif tag == "PreEomi":
-        tag = "E"
-    elif tag == "CashTag":
-        tag = "c"
-    elif tag == "VerbPrefix":
-        tag = "a"
-    elif tag == "NounPrefix":
-        tag = "N"
-    elif tag == "Punctuation":
-        tag = "P"
-    elif tag == "Josa":
-        tag = "J"
-    elif tag == "Alpha":
-        tag = "R"
-    elif tag == "ScreenName":
-        tag = "s"
-    elif tag == "KoreanParticle":
-        tag = "NP"
-    elif tag == "URL":
-        tag = "U"
-    elif tag == "Email":
-        tag = "M"
-    elif tag == "Conjunction":
-        tag = "a"
-    else:
-        print("error: " + tag)
-        return tag
-    return tag
-
-
-def twitter_symbol_filter(line):
-    """ convert to parenthesis """
-    line = re.sub(r'&lt;', '<', line)
-    line = re.sub(r'&gt;', '>', line)
-    """ remove site link"""
-    line = re.sub(r'(?:http|ftp|https)://(?:[\w_-]+(?:(?:\.[\w_-]+)+))(?:[\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?',
-                  '', line)
-    """ remove symbol except @(tag detection in twitter.pos) and _(id symbol such as '@like_bot') """
-    line = re.sub('[\t\r\n\f(){}\[\]#$%^&*\-+|`~=<>]+', ' ', line)
-    """ remove special symbol, emoticons """
-    line = re.sub(r'[^ ㄱ-ㅣ가-힣a-zA-Z0-9.,?!@_]+', '', line)
-    return line
 
 
 # means predicted:X, target:y
@@ -166,6 +99,21 @@ def load_entity_lexicon():
     return lexicon_dict, lexicon_vocab_dict
 
 
+def load_analogy_pair(fname):
+    ap_dict = defaultdict(list)
+    with codecs.open(fname, 'r', encoding='utf-8', errors='ignore') as f:
+        for i, line in enumerate(re.split('[\r\n]+', f.read())):
+            if len(line.strip()) > 0:
+                tokens = re.split(r'\t', line.strip())
+                for token in re.split(r' ', tokens[1]):
+                    if tokens[0] == 'pairs':
+                        ap_dict[tokens[0]].append(tuple(re.split(r'/', token)))
+                    else:
+                        ap_dict[tokens[0]].append(token)
+
+    return ap_dict['pairs'], ap_dict['neutral_words']
+
+
 class Vocab(object):
     """
     A single vocabulary item, used internally e.g. for constructing binary trees
@@ -192,18 +140,15 @@ class TwitterCorpus(object):
         self.fname = fname
 
     def __iter__(self):
-        # the entire corpus is one gigantic line -- there are no sentence marks at all
-        # so just split the sequence of tokens arbitrarily: 1 sentence = 1000 tokens
         sentence, rest, max_sentence_length = [], '', 1000
         with codecs.open(self.fname, "r", encoding="utf-8", errors='ignore') as fin:
             while True:
-                text = rest + fin.read(8192)  # avoid loading the entire file (=1 line) into RAM
+                text = rest + fin.read(8192)
                 if text == rest:  # EOF
-                    sentence.extend(rest.split())  # return the last chunk of words, too (may be shorter/longer)
+                    sentence.extend(rest.split())
                     if sentence:
                         yield sentence
                     break
-                # the last token may have been split in two... keep it for the next iteration
                 last_token = text.rfind(' ')
                 words, rest = (text[:last_token].split(), text[last_token:].strip()) if last_token >= 0 else \
                     ([], text)

@@ -7,6 +7,7 @@ Unlabeled Corpora. Proceedings of EMNLP. 2016. (to appear; arXiv:1606.02820).
 
 import random
 import time
+import codecs
 import numpy as np
 import config
 import embedding
@@ -114,19 +115,15 @@ def mitigate_embedding():
                                               method=densify,
                                               lr=0.001, regularization_strength=0.001, lexicon2_vocab=lexicon2_vocab,
                                               **DEFAULT_ARGUMENTS)
-    evaluate(polarities, lexicon, eval_words, scope=('pos', 'neg'))
-    evaluate(entities, lexicon2, eval_words2, scope=('entity', 'notity'))
+    with codecs.open(config.MITIGATED_EMBEDDING_INFO, "w", encoding='utf-8', errors='ignore') as f:
+        evaluate(polarities, lexicon, eval_words, f, scope=('pos', 'neg'))
+        evaluate(entities, lexicon2, eval_words2, f, scope=('entity', 'notity'))
 
     print("Program end... in {:.2f} sec".format(config.whattime()))
 
 
-def run_method(positive_seeds, negative_seeds, entity_seeds, notity_seeds, embeddings, transform_embeddings=False,
+def run_method(positive_seeds, negative_seeds, entity_seeds, notity_seeds, embeddings,
                method=densify, lexicon2_vocab={}, **kwargs):
-    #if transform_embeddings:
-    #    print("Transforming embeddings...")
-    #    embeddings = densify.apply_embedding_transformation(embeddings, positive_seeds, negative_seeds,
-    #                                                                      n_dim=50)
-
     positive_seeds = [s for s in positive_seeds if s in embeddings]
     negative_seeds = [s for s in negative_seeds if s in embeddings]
     entity_seeds = [s for s in entity_seeds if s in embeddings]
@@ -135,7 +132,7 @@ def run_method(positive_seeds, negative_seeds, entity_seeds, notity_seeds, embed
                   **kwargs)
 
 
-def evaluate(polarities, lexicon, eval_words, scope=('pos', 'neg')):
+def evaluate(polarities, lexicon, eval_words, f, scope=('pos', 'neg')):
     acc, auc, avg_prec, cutoff = binary_metrics(polarities, lexicon, eval_words)
     space_order = 1
     if auc < 0.5:
@@ -144,6 +141,7 @@ def evaluate(polarities, lexicon, eval_words, scope=('pos', 'neg')):
         space_order = -1
 
     top_n_words(polarities, eval_words, scope)
+    f.write('{} / {} cutoff:{} with space_order: {}\n'.format(scope[0], scope[1], cutoff, space_order))
     print("{} / {} cutoff: {} with space_order: {}".format(scope[0], scope[1], cutoff, space_order))
     print("Binary metrics:")
     print("==============")

@@ -12,7 +12,7 @@ import numpy as np
 import config
 import gensim
 
-import show_statistics
+import config
 from collections import OrderedDict
 from gensim.test.utils import datapath
 from gensim.models import word2vec
@@ -20,7 +20,7 @@ from sklearn import preprocessing
 
 
 DEFAULT_ARGUMENTS_W2V = dict(workers=4, sg=1, size=300, window=5, min_count=5, sample=10^-4, negative=5, seed=1, iter=2)
-sensitive_pair, neutral_word_list = show_statistics.load_analogy_pair(config.SOURCE_DIR + 'minority_groups.txt')
+sensitive_pair, neutral_word_list = config.load_analogy_pair(config.SOURCE_DIR + 'minority_groups.txt')
 
 
 def load_pickle(fname):
