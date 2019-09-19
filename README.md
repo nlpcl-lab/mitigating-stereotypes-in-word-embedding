@@ -39,12 +39,12 @@ In the word analogy about occupation (pre-trained Glove.300d)
 
 __Meaning Reprensentation Changed By Our Model__:
 
-_(Before)_ man - woman __=__ electrician - nurse 
-_(After)_ man - woman __=__ electrician - machinist
+__(Before)__ man - woman __=__ electrician - nurse 
+__(After)__ man - woman __=__ electrician - machinist
 
 
-_(Before)_ man - woman __=__ crooner - singer
-_(After)_ man - woman __=__ crooner - diva
+__(Before)__ man - woman __=__ crooner - singer
+__(After)__ man - woman __=__ crooner - diva
 
 
 __Meaning Reprensentation Preserved By Our Model__:
