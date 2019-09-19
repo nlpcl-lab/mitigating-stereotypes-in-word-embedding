@@ -21,6 +21,7 @@ python mitigating_stereotypes.py #generates a word embedding with mitigating ste
 
 ```
 > Input: original word embedding (e.g. word2vec, glove, other embeddings)
+
 > Output: stereotype-mitigated word embedding (located in ```model/```)
 
 ```bash
@@ -28,6 +29,7 @@ python show_statistics.py #shows the performance results of the original embeddi
 
 ``` 
 > Input: original word embedding, mitigated word embedding
+
 > Output: embedding performance, bias ratio
 
 ### Examples
