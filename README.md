@@ -16,8 +16,17 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
   - Note that all external resources should be located at ```source/```
 
 ### Commands
-- ```python mitigating_stereotypes.py``` generates a word embedding with mitigating stereotypes
-- ```python show_statistics.py``` shows the performance results of the original embedding and the mitigated embedding.
+```python mitigating_stereotypes.py``` generates a word embedding with mitigating stereotypes
+
+- Input: original word embedding (e.g. word2vec, glove, other embeddings)
+
+- Output: stereotype-mitigated word embedding (located in ```model/```)
+
+```python show_statistics.py``` shows the performance results of the original embedding and the mitigated embedding.
+
+- Input: original word embedding, mitigated word embedding
+
+- Output: embedding performance, bias ratio
 
 ### Examples
 In the word analogy about occupation (pre-trained Glove.300d)
