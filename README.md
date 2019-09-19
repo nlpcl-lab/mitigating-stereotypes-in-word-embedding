@@ -37,27 +37,37 @@ In the word analogy about occupation (pre-trained Glove.300d)
 
 \<group1>:\<group2> = \<occupation>: \<origin> / \<mitigated>
 
-__Changes by the mitigation__:
+__Meaning Reprensentation Changed By Our Model__:
 
-__(Before)__ _man - woman __=__ electrician - nurse 
-__(After)__ man - woman __=__ electrician - machinist_
+__(Before)__ man - woman __=__ electrician - nurse 
 
-
-__(Before)__ _man - woman __=__ crooner - singer
-__(After)__ man - woman __=__ crooner - diva_
+__(After)__ man - woman __=__ electrician - machinist
 
 
-> _man - woman __=__ electrician - nurse --> man - woman __=__ electrician - machinist_
-> man:woman = crooner: [origin]singer / [mitigated]diva
-- man:woman = crusader: [origin]feminist / [mitigated]crusade
+__(Before)__ man - woman __=__ crooner - singer
 
-__Maintained__:
-- man:woman = entrepreneur: [origin]businesswoman / [mitigated]businesswoman
-- man:woman = actor: [origin]actress / [mitigated]actress
-- man:woman = waiter: [origin]waitress / [mitigated]waitress
+__(After)__ man - woman __=__ crooner - diva
 
 
-### Results
+__Meaning Reprensentation Preserved By Our Model__:
+
+__(Before)__ man - woman __=__ entrepreneur - businesswoman 
+
+__(After)__ man - woman __=__ entrepreneur - businesswoman
+
+
+__(Before)__ man - woman __=__ actor - actress
+
+__(After)__ man - woman __=__ actor - actress
+
+
+__(Before)__ man - woman __=__ waiter - waitress
+
+__(After)__ _ man - woman __=__ waiter - waitress _
+
+
+
+### Quantitative Evaluation Results
 (Original Glove -> mitigated Glove)
 - Performance (Intrinsic evaluation): 70.7% -> 70.4% (Accuracy -0.3%), 0.601 -> 0.592 (Spearman r -0.009)
 - Bias ratio (False positive ratio): 5.45 -> 4.72 (ratio -16%)
