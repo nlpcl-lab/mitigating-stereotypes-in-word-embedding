@@ -48,7 +48,7 @@ __Meaning Reprensentation Preserved By Our Model__:
 
 - __(Before)__ man - woman __=__ actor - actress    __(After)__ man - woman __=__ actor - actress
 
-- __(Before)__ man - woman __=__ waiter - waitress    __(After)__ man - woman __=__ waiter - waitress _
+- __(Before)__ man - woman __=__ waiter - waitress    __(After)__ man - woman __=__ waiter - waitress
 
 
 
