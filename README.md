@@ -20,26 +20,31 @@ We provide the code and data for the following paper: Mitigating Stereotypes in 
 python mitigating_stereotypes.py #generates a word embedding with mitigating stereotypes
 
 ```
->__Input__: original word embedding (e.g. word2vec, glove, other embeddings)
+__Input__: original word embedding (e.g. word2vec, glove, other embeddings)
 
->__Output__: stereotype-mitigated word embedding (located in ```model/```)
+__Output__: stereotype-mitigated word embedding (located in ```model/```)
 
 ```bash
 python show_statistics.py #shows the performance results of the original embedding and the mitigated embedding.
 
 ``` 
->__Input__: original word embedding, mitigated word embedding
+__Input__: original word embedding, mitigated word embedding
 
->__Output__: embedding performance, bias ratio
+__Output__: embedding performance, bias ratio
 
 ### Examples
 In the word analogy about occupation (pre-trained Glove.300d)
 
 \<group1>:\<group2> = \<occupation>: \<origin> / \<mitigated>
 
-__Changes from origin to mitigated__:
-> _man - woman __=__ electrician - nurse --> man - woman __=__ electrician - machinist_
-> _man - woman __=__ crooner - singer --> man - woman __=__ crooner - diva_
+__Changes by the mitigation__:
+
+__(Before)__ _man - woman __=__ electrician - nurse 
+__(After)__ man - woman __=__ electrician - machinist_
+
+
+__(Before)__ _man - woman __=__ crooner - singer
+__(After)__ man - woman __=__ crooner - diva_
 
 
 > _man - woman __=__ electrician - nurse --> man - woman __=__ electrician - machinist_
