@@ -37,12 +37,16 @@ In the word analogy about occupation (pre-trained Glove.300d)
 
 \<group1>:\<group2> = \<occupation>: \<origin> / \<mitigated>
 
-Changes from origin to mitigated:
-- man:woman = electrician: [origin]nurse / [mitigated]machinist
-- man:woman = crooner: [origin]singer / [mitigated]diva
+__Changes from origin to mitigated__:
+> _man - woman __=__ electrician - nurse --> man - woman __=__ electrician - machinist_
+> _man - woman __=__ crooner - singer --> man - woman __=__ crooner - diva_
+
+
+> _man - woman __=__ electrician - nurse --> man - woman __=__ electrician - machinist_
+> man:woman = crooner: [origin]singer / [mitigated]diva
 - man:woman = crusader: [origin]feminist / [mitigated]crusade
 
-Maintained:
+__Maintained__:
 - man:woman = entrepreneur: [origin]businesswoman / [mitigated]businesswoman
 - man:woman = actor: [origin]actress / [mitigated]actress
 - man:woman = waiter: [origin]waitress / [mitigated]waitress
